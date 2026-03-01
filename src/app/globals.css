@@ -1,0 +1,171 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --bg-primary: #080D19;
+  --bg-card: #0F1629;
+  --bg-chat: #0A1020;
+  --bg-elevated: #141B2D;
+  --border: #1C2A3A;
+  --border-hover: #2A3A4A;
+  --accent: #00D09C;
+  --accent-hover: #00E6AC;
+  --accent-dim: #00A87D;
+  --brand-red: #FF3B3B;
+  --brand-red-hover: #FF5252;
+  --success: #00D09C;
+  --warning: #FFB020;
+  --danger: #FF4757;
+  --text-primary: #FFFFFF;
+  --text-secondary: #8B9DC3;
+  --text-muted: #4A5F80;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Pulse animation for matching */
+@keyframes matchPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+/* Gradient text — emerald green to teal */
+.gradient-text {
+  background: linear-gradient(135deg, #00D09C 0%, #00E6AC 50%, #34D399 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Brand red text (for "IITian" in logo) */
+.brand-red-text {
+  color: #FF3B3B;
+}
+
+/* Glass morphism card — dark glass */
+.glass-card {
+  background: rgba(15, 22, 41, 0.85);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(28, 42, 58, 0.7);
+}
+
+/* Grid pattern overlay — matches the website dark card grid */
+.grid-pattern {
+  background-image:
+    linear-gradient(rgba(28, 42, 58, 0.4) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(28, 42, 58, 0.4) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Glow button — green glow */
+.glow-btn {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+.glow-btn::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(0, 208, 156, 0.25) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.glow-btn:hover::before {
+  opacity: 1;
+}
+.glow-btn:hover {
+  box-shadow: 0 0 30px rgba(0, 208, 156, 0.35);
+  transform: translateY(-2px);
+}
+
+/* Red glow button variant */
+.glow-btn-red {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+.glow-btn-red:hover {
+  box-shadow: 0 0 25px rgba(255, 59, 59, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Chat bubble animations */
+.chat-bubble-enter {
+  animation: slideUp 0.3s ease-out forwards;
+}
+
+/* Connection dots animation */
+@keyframes connectionDots {
+  0%, 20% { opacity: 0; }
+  50% { opacity: 1; }
+  80%, 100% { opacity: 0; }
+}
+
+.dot-animate:nth-child(1) { animation: connectionDots 1.5s infinite 0s; }
+.dot-animate:nth-child(2) { animation: connectionDots 1.5s infinite 0.3s; }
+.dot-animate:nth-child(3) { animation: connectionDots 1.5s infinite 0.6s; }
+
+/* Accent card — the green card style from the website */
+.accent-card {
+  background: linear-gradient(135deg, #00D09C 0%, #00A87D 100%);
+  color: #FFFFFF;
+}
+
+/* Dark grid card — the dark card with grid from the website */
+.dark-grid-card {
+  background: #0B1120;
+  background-image:
+    linear-gradient(rgba(28, 42, 58, 0.5) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(28, 42, 58, 0.5) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
