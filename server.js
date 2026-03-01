@@ -8,12 +8,17 @@
 const { createServer } = require('http');
 const { Server } = require('socket.io');
 
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 const httpServer = createServer();
 
 const io = new Server(httpServer, {
   cors: {
-    origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+    origin: [
+      'http://localhost:3000',
+      'http://127.0.0.1:3000',
+      'https://connect.genziitian.in',
+      process.env.FRONTEND_URL,
+    ].filter(Boolean),
     methods: ['GET', 'POST'],
   },
   transports: ['websocket', 'polling'],
@@ -310,12 +315,12 @@ setInterval(() => {
 }, 5000);
 
 // ─── Start Server ───
-httpServer.listen(PORT, () => {
+httpServer.listen(PORT, '0.0.0.0', () => {
   console.log('');
   console.log('═══════════════════════════════════════════');
   console.log('  GenZ IITian Connect — Socket.IO Server');
   console.log(`  Port: ${PORT}`);
-  console.log('  CORS: http://localhost:3000');
+  console.log(`  CORS: localhost + connect.genziitian.in`);
   console.log('═══════════════════════════════════════════');
   console.log('');
   console.log('Waiting for connections...');

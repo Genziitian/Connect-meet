@@ -80,7 +80,7 @@ const SYSTEM_MESSAGES: ChatMessage[] = [
   },
 ];
 
-const SOCKET_URL = 'http://localhost:3001';
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
 
 export default function ConnectPage() {
   const { user, isAuthenticated } = useAuth();
