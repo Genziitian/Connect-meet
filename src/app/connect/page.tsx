@@ -121,6 +121,7 @@ export default function ConnectPage() {
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
+  const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
 
   // Report state
   const [showReport, setShowReport] = useState(false);
@@ -204,16 +205,48 @@ export default function ConnectPage() {
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun3.l.google.com:19302' },
+        { urls: 'stun:stun4.l.google.com:19302' },
+        {
+          urls: 'turn:openrelay.metered.ca:80',
+          username: 'openrelayproject',
+          credential: 'openrelayproject',
+        },
+        {
+          urls: 'turn:openrelay.metered.ca:443',
+          username: 'openrelayproject',
+          credential: 'openrelayproject',
+        },
+        {
+          urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+          username: 'openrelayproject',
+          credential: 'openrelayproject',
+        },
       ],
+      iceCandidatePoolSize: 10,
     });
 
     pc.onicecandidate = (event) => {
       if (event.candidate) {
+        console.log('[WebRTC] ICE candidate:', event.candidate.type, event.candidate.protocol);
         socket.emit('webrtc:ice-candidate', {
           sessionId: sid,
           candidate: event.candidate,
         });
       }
+    };
+
+    pc.oniceconnectionstatechange = () => {
+      console.log('[WebRTC] ICE connection state:', pc.iceConnectionState);
+      if (pc.iceConnectionState === 'failed') {
+        console.log('[WebRTC] ICE failed, attempting restart...');
+        pc.restartIce();
+      }
+    };
+
+    pc.onconnectionstatechange = () => {
+      console.log('[WebRTC] Connection state:', pc.connectionState);
     };
 
     pc.ontrack = (event) => {
@@ -364,6 +397,11 @@ export default function ConnectPage() {
       const pc = createPeerConnection(sid, socket);
       try {
         await pc.setRemoteDescription(new RTCSessionDescription(offer));
+        // Flush queued ICE candidates
+        for (const c of pendingCandidatesRef.current) {
+          try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch {}
+        }
+        pendingCandidatesRef.current = [];
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
         socket.emit('webrtc:answer', { sessionId: sid, answer });
@@ -378,6 +416,11 @@ export default function ConnectPage() {
       if (peerConnectionRef.current) {
         try {
           await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(answer));
+          // Flush queued ICE candidates
+          for (const c of pendingCandidatesRef.current) {
+            try { await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(c)); } catch {}
+          }
+          pendingCandidatesRef.current = [];
           console.log('[WebRTC] Remote description set — connection should establish');
         } catch (err) {
           console.error('[WebRTC] Error setting answer:', err);
@@ -386,10 +429,18 @@ export default function ConnectPage() {
     });
 
     socket.on('webrtc:ice-candidate', async ({ candidate }: { candidate: RTCIceCandidateInit }) => {
-      if (peerConnectionRef.current && candidate) {
+      if (!candidate) return;
+      const pc = peerConnectionRef.current;
+      if (pc && pc.remoteDescription) {
         try {
-          await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate));
-        } catch { /* ignore */ }
+          await pc.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (e) {
+          console.warn('[WebRTC] Failed to add ICE candidate:', e);
+        }
+      } else {
+        // Queue candidates until remote description is set
+        console.log('[WebRTC] Queueing ICE candidate (no remote description yet)');
+        pendingCandidatesRef.current.push(candidate);
       }
     });
 
