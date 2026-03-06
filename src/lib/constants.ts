@@ -39,7 +39,6 @@ export const PLANS: Plan[] = [
     topicFilters: true,
     priorityMatching: false,
     highlighted: true,
-    comingSoon: true,
     features: [
       'Everything in Starter',
       '50 connects per day',
@@ -59,7 +58,6 @@ export const PLANS: Plan[] = [
     videoEnabled: true,
     topicFilters: true,
     priorityMatching: true,
-    comingSoon: true,
     features: [
       'Everything in Pro',
       'Unlimited connects',

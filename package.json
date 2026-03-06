@@ -14,9 +14,11 @@
   "description": "",
   "dependencies": {
     "firebase": "^12.10.0",
+    "firebase-admin": "^13.7.0",
     "framer-motion": "^12.34.3",
     "lucide-react": "^0.575.0",
     "next": "^14.2.35",
+    "razorpay": "^2.9.6",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "socket.io": "^4.8.3",
