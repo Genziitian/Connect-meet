@@ -37,7 +37,12 @@ import {
   RefreshCw,
   Camera,
   Sparkles,
+  Maximize,
+  Minimize,
+  MessageCircle,
+  ChevronUp,
 } from 'lucide-react';
+import { useFullscreen } from '@/lib/fullscreen-context';
 
 type ConnectPhase = 'rules' | 'lobby' | 'queue' | 'chat' | 'ended';
 
@@ -85,10 +90,14 @@ const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001'
 export default function ConnectPage() {
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
+  const { isFullscreen, enterFullscreen, exitFullscreen, toggleFullscreen } = useFullscreen();
 
   const [phase, setPhase] = useState<ConnectPhase>('rules');
   const [mode, setMode] = useState<ChatMode>('text');
   const [rulesAccepted, setRulesAccepted] = useState(false);
+
+  // Mobile chat panel toggle (video mode)
+  const [mobileChatOpen, setMobileChatOpen] = useState(false);
 
   // Socket state
   const socketRef = useRef<Socket | null>(null);
@@ -201,29 +210,27 @@ export default function ConnectPage() {
   }, [stopCamera]);
 
   const createPeerConnection = useCallback((sid: string, socket: Socket) => {
+    // Reliable free STUN servers + configurable TURN for production
+    const iceServers: RTCIceServer[] = [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'stun:stun2.l.google.com:19302' },
+      { urls: 'stun:stun3.l.google.com:19302' },
+      { urls: 'stun:stun4.l.google.com:19302' },
+    ];
+
+    // Add TURN server if configured via env (required for users behind symmetric NAT)
+    const turnUrl = process.env.NEXT_PUBLIC_TURN_URL;
+    if (turnUrl) {
+      iceServers.push({
+        urls: turnUrl,
+        username: process.env.NEXT_PUBLIC_TURN_USERNAME || '',
+        credential: process.env.NEXT_PUBLIC_TURN_CREDENTIAL || '',
+      });
+    }
+
     const pc = new RTCPeerConnection({
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun2.l.google.com:19302' },
-        { urls: 'stun:stun3.l.google.com:19302' },
-        { urls: 'stun:stun4.l.google.com:19302' },
-        {
-          urls: 'turn:openrelay.metered.ca:80',
-          username: 'openrelayproject',
-          credential: 'openrelayproject',
-        },
-        {
-          urls: 'turn:openrelay.metered.ca:443',
-          username: 'openrelayproject',
-          credential: 'openrelayproject',
-        },
-        {
-          urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-          username: 'openrelayproject',
-          credential: 'openrelayproject',
-        },
-      ],
+      iceServers,
       iceCandidatePoolSize: 10,
     });
 
@@ -252,9 +259,17 @@ export default function ConnectPage() {
     pc.ontrack = (event) => {
       console.log('[WebRTC] Remote track received:', event.track.kind);
       if (event.streams[0]) {
-        if (remoteVideoRef.current) {
-          remoteVideoRef.current.srcObject = event.streams[0];
-        }
+        const stream = event.streams[0];
+        const attachRemote = () => {
+          if (remoteVideoRef.current) {
+            remoteVideoRef.current.srcObject = stream;
+            remoteVideoRef.current.play().catch(() => {});
+          }
+        };
+        attachRemote();
+        // Retry after a short delay in case the element wasn't ready
+        requestAnimationFrame(attachRemote);
+        setTimeout(attachRemote, 300);
         setRemoteStreamActive(true);
       }
     };
@@ -311,18 +326,28 @@ export default function ConnectPage() {
       setMessages(SYSTEM_MESSAGES.map((m) => ({ ...m, sessionId: sid })));
       setShowIcebreakers(true);
       setRemoteStreamActive(false);
+      setMobileChatOpen(false);
+      enterFullscreen();
       setPhase('chat');
 
       // If video mode and I'm the initiator, create the offer
       if (matchMode === 'video' && isInitiator) {
-        // Wait a moment for peer to be ready
-        await new Promise(r => setTimeout(r, 500));
+        // Wait for peer to be ready
+        await new Promise(r => setTimeout(r, 800));
         if (!localStreamRef.current) {
           await startCamera();
         }
+        // Ensure we have media tracks before creating offer
+        if (!localStreamRef.current) {
+          console.error('[WebRTC] Cannot create offer: no local stream');
+          return;
+        }
         const pc = createPeerConnection(sid, socket);
         try {
-          const offer = await pc.createOffer();
+          const offer = await pc.createOffer({
+            offerToReceiveAudio: true,
+            offerToReceiveVideo: true,
+          });
           await pc.setLocalDescription(offer);
           socket.emit('webrtc:offer', { sessionId: sid, offer });
           console.log('[WebRTC] Offer created and sent (initiator)');
@@ -496,6 +521,11 @@ export default function ConnectPage() {
       if (videoTrack) {
         videoTrack.enabled = !videoTrack.enabled;
         setIsVideoOff(!videoTrack.enabled);
+        // Re-attach stream to video element when re-enabling
+        if (videoTrack.enabled && localVideoRef.current) {
+          localVideoRef.current.srcObject = localStreamRef.current;
+          localVideoRef.current.play().catch(() => {});
+        }
       }
     }
   };
@@ -536,6 +566,7 @@ export default function ConnectPage() {
   const handleEndChat = () => {
     socketRef.current?.emit('chat:end', { sessionId });
     cleanupWebRTC();
+    exitFullscreen();
     setPhase('ended');
   };
 
@@ -566,6 +597,7 @@ export default function ConnectPage() {
     setReportReason('harassment');
     setReportDescription('');
     cleanupWebRTC();
+    exitFullscreen();
     setPhase('ended');
   };
 
@@ -587,52 +619,52 @@ export default function ConnectPage() {
   // ═══════════════════════════════════════════
   if (phase === 'rules') {
     return (
-      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12">
+      <div className="min-h-[calc(100vh-4rem)] bb-grid flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-lg">
           <div className="text-center mb-6">
-            <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-accent/10 mb-4">
-              <Shield className="h-7 w-7 text-brand-accent" />
+            <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[#00D09C] border-[3px] border-[#111] shadow-[3px_3px_0px_#111] mb-4">
+              <Shield className="h-7 w-7 text-white" />
             </div>
-            <h1 className="text-2xl font-black text-white mb-2">Community Safety Rules</h1>
-            <p className="text-brand-text-secondary text-sm">
+            <h1 className="text-2xl font-black text-[#111] mb-2">Community Safety Rules</h1>
+            <p className="text-[#555] text-sm">
               You must agree to these rules before connecting. Violations result in permanent ban.
             </p>
           </div>
 
-          <div className="rounded-2xl border-2 border-brand-border bg-brand-card p-6">
+          <div className="bb-card bg-white p-6">
             {/* Connection status */}
             <div className="flex items-center justify-center gap-2 mb-4">
               <span className={cn(
                 'h-2 w-2 rounded-full',
-                isConnected ? 'bg-brand-success animate-pulse' : 'bg-brand-danger'
+                isConnected ? 'bg-[#00D09C] animate-pulse' : 'bg-[#FF4757]'
               )} />
-              <span className="text-xs text-brand-text-muted">
+              <span className="text-xs text-[#888]">
                 {isConnected ? `Server connected • ${onlineCount} online` : 'Connecting to server...'}
               </span>
             </div>
 
             <div className="space-y-3 mb-6">
               {COMMUNITY_RULES.map((rule) => (
-                <div key={rule.title} className="flex items-start gap-3 rounded-lg bg-brand-bg border border-brand-border p-3">
+                <div key={rule.title} className="flex items-start gap-3 rounded-xl bg-[#FDEBD3] border-[2px] border-[#111] p-3 shadow-[2px_2px_0px_#111]">
                   <span className="text-lg mt-0.5">{rule.icon}</span>
                   <div>
-                    <p className="text-sm font-semibold">{rule.title}</p>
-                    <p className="text-xs text-brand-text-muted mt-0.5">{rule.description}</p>
+                    <p className="text-sm font-bold text-[#111]">{rule.title}</p>
+                    <p className="text-xs text-[#888] mt-0.5">{rule.description}</p>
                   </div>
                 </div>
               ))}
             </div>
 
-            <label className="flex items-start gap-3 p-3 rounded-lg bg-brand-accent/5 border border-brand-accent/20 cursor-pointer mb-4">
+            <label className="flex items-start gap-3 p-3 rounded-xl bg-[#00D09C]/10 border-[2px] border-[#00D09C] cursor-pointer mb-4">
               <input
                 type="checkbox"
                 checked={rulesAccepted}
                 onChange={(e) => setRulesAccepted(e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-brand-border bg-brand-bg text-brand-accent focus:ring-brand-accent"
+                className="mt-0.5 h-4 w-4 rounded border-[#111] bg-white text-[#00D09C] focus:ring-[#00D09C]"
               />
               <div>
-                <p className="text-sm font-semibold">I Agree to All Rules</p>
-                <p className="text-xs text-brand-text-muted mt-0.5">
+                <p className="text-sm font-bold text-[#111]">I Agree to All Rules</p>
+                <p className="text-xs text-[#888] mt-0.5">
                   I understand that any violation will result in permanent ban and may be reported to authorities.
                 </p>
               </div>
@@ -641,7 +673,7 @@ export default function ConnectPage() {
             <button
               onClick={() => setPhase('lobby')}
               disabled={!rulesAccepted || !isConnected}
-              className="w-full glow-btn flex items-center justify-center gap-2 rounded-lg bg-brand-accent py-3 text-sm font-semibold text-white hover:bg-brand-accent-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full bb-btn bb-btn-green flex items-center justify-center gap-2 py-3 text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {!isConnected ? (
                 <>
@@ -666,51 +698,51 @@ export default function ConnectPage() {
   // ═══════════════════════════════════════════
   if (phase === 'lobby') {
     return (
-      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12">
+      <div className="min-h-[calc(100vh-4rem)] bb-grid flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-lg">
           <div className="text-center mb-6">
-            <h1 className="text-2xl font-black text-white mb-2">Study Connect</h1>
-            <p className="text-brand-text-secondary text-sm">
+            <h1 className="text-2xl font-black text-[#111] mb-2">Study Connect</h1>
+            <p className="text-[#555] text-sm">
               Choose your mode and start connecting with verified students
             </p>
             <div className="flex items-center justify-center gap-2 mt-3">
-              <span className="flex items-center gap-1.5 rounded-full bg-brand-success/10 px-3 py-1 text-xs text-brand-success">
-                <span className="h-2 w-2 rounded-full bg-brand-success animate-pulse" />
+              <span className="flex items-center gap-1.5 rounded-full border-[2px] border-[#111] bg-[#00D09C] px-3 py-1 text-xs text-white font-bold shadow-[2px_2px_0px_#111]">
+                <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
                 {onlineCount > 0 ? `${onlineCount} students online` : 'Online students nearby'}
               </span>
             </div>
           </div>
 
-          <div className="rounded-2xl border-2 border-brand-border bg-brand-card p-6 space-y-6">
+          <div className="bb-card bg-white p-6 space-y-6">
             {/* Mode Selection */}
             <div>
-              <label className="block text-sm font-medium text-brand-text-secondary mb-3">Chat Mode</label>
+              <label className="block text-sm font-bold text-[#555] mb-3">Chat Mode</label>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => setMode('text')}
                   className={cn(
-                    'relative rounded-xl border p-4 text-center transition-all',
+                    'relative rounded-xl border-[2px] p-4 text-center transition-all',
                     mode === 'text'
-                      ? 'border-brand-accent bg-brand-accent/10 ring-1 ring-brand-accent/30'
-                      : 'border-brand-border bg-brand-bg hover:border-brand-accent/30'
+                      ? 'border-[#111] bg-[#00D09C]/10 shadow-[3px_3px_0px_#111]'
+                      : 'border-[#ddd] bg-[#FDEBD3] hover:border-[#111]'
                   )}
                 >
-                  <MessageSquare className="h-8 w-8 text-brand-accent mx-auto mb-2" />
-                  <p className="text-sm font-semibold">Text Chat</p>
-                  <p className="text-xs text-brand-text-muted mt-1">Free for all</p>
+                  <MessageSquare className="h-8 w-8 text-[#00D09C] mx-auto mb-2" />
+                  <p className="text-sm font-black text-[#111]">Text Chat</p>
+                  <p className="text-xs text-[#888] mt-1">Free for all</p>
                 </button>
                 <button
                   onClick={() => setMode('video')}
                   className={cn(
-                    'relative rounded-xl border p-4 text-center transition-all',
+                    'relative rounded-xl border-[2px] p-4 text-center transition-all',
                     mode === 'video'
-                      ? 'border-brand-accent bg-brand-accent/10 ring-1 ring-brand-accent/30'
-                      : 'border-brand-border bg-brand-bg hover:border-brand-accent/30'
+                      ? 'border-[#111] bg-[#B794F6]/10 shadow-[3px_3px_0px_#111]'
+                      : 'border-[#ddd] bg-[#FDEBD3] hover:border-[#111]'
                   )}
                 >
-                  <Video className="h-8 w-8 text-brand-accent mx-auto mb-2" />
-                  <p className="text-sm font-semibold">Video Chat</p>
-                  <p className="text-xs text-brand-text-muted mt-1">Camera + Text</p>
+                  <Video className="h-8 w-8 text-[#B794F6] mx-auto mb-2" />
+                  <p className="text-sm font-black text-[#111]">Video Chat</p>
+                  <p className="text-xs text-[#888] mt-1">Camera + Text</p>
                 </button>
               </div>
             </div>
@@ -718,7 +750,7 @@ export default function ConnectPage() {
             {/* Camera preview for video mode */}
             {mode === 'video' && (
               <div className="space-y-3">
-                <div className="relative aspect-video rounded-xl bg-brand-bg border-2 border-brand-border overflow-hidden">
+                <div className="relative aspect-video rounded-xl bg-[#111] border-[3px] border-[#111] overflow-hidden">
                   {cameraReady ? (
                     <video
                       ref={localVideoRef}
@@ -730,8 +762,8 @@ export default function ConnectPage() {
                     />
                   ) : (
                     <div className="flex flex-col items-center justify-center h-full">
-                      <Camera className="h-10 w-10 text-brand-text-muted mb-3" />
-                      <p className="text-sm text-brand-text-muted">Camera preview</p>
+                      <Camera className="h-10 w-10 text-white/50 mb-3" />
+                      <p className="text-sm text-white/50">Camera preview</p>
                     </div>
                   )}
                   {cameraReady && (
@@ -758,15 +790,15 @@ export default function ConnectPage() {
                   )}
                 </div>
                 {cameraError && (
-                  <p className="text-xs text-brand-danger text-center">{cameraError}</p>
+                  <p className="text-xs text-[#FF4757] text-center">{cameraError}</p>
                 )}
                 <button
                   onClick={cameraReady ? stopCamera : startCamera}
                   className={cn(
-                    'w-full rounded-lg border py-2.5 text-sm font-medium transition-colors',
+                    'w-full rounded-xl border-[2px] border-[#111] py-2.5 text-sm font-bold transition-all shadow-[2px_2px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[1px] hover:translate-y-[1px]',
                     cameraReady
-                      ? 'border-brand-danger/30 text-brand-danger hover:bg-brand-danger/10'
-                      : 'border-brand-accent/30 text-brand-accent hover:bg-brand-accent/10'
+                      ? 'bg-[#FF6B6B] text-white'
+                      : 'bg-[#B794F6] text-white'
                   )}
                 >
                   {cameraReady ? 'Stop Camera' : 'Test Camera'}
@@ -779,24 +811,24 @@ export default function ConnectPage() {
               <button
                 onClick={() => canUseFilters && setShowFilters(!showFilters)}
                 className={cn(
-                  'flex w-full items-center justify-between rounded-lg border px-4 py-3 text-sm transition-colors',
+                  'flex w-full items-center justify-between rounded-xl border-[2px] px-4 py-3 text-sm transition-all',
                   canUseFilters
-                    ? 'border-brand-border hover:border-brand-accent/30 cursor-pointer'
-                    : 'border-brand-border opacity-60 cursor-not-allowed',
+                    ? 'border-[#111] bg-[#FDEBD3] shadow-[2px_2px_0px_#111] hover:shadow-[1px_1px_0px_#111] cursor-pointer'
+                    : 'border-[#ddd] bg-gray-100 opacity-60 cursor-not-allowed',
                 )}
               >
                 <span className="flex items-center gap-2">
-                  <Settings className="h-4 w-4 text-brand-accent" />
-                  <span className="font-medium">Smart Matching Filters</span>
+                  <Settings className="h-4 w-4 text-[#00D09C]" />
+                  <span className="font-bold text-[#111]">Smart Matching Filters</span>
                   {!canUseFilters && (
-                    <span className="rounded-full bg-brand-warning/10 px-2 py-0.5 text-xs text-brand-warning">Pro+</span>
+                    <span className="rounded-full bg-[#FB923C] border-[2px] border-[#111] px-2 py-0.5 text-xs text-white font-bold">Pro+</span>
                   )}
                 </span>
-                <ChevronDown className={cn('h-4 w-4 text-brand-text-muted transition-transform', showFilters && 'rotate-180')} />
+                <ChevronDown className={cn('h-4 w-4 text-[#888] transition-transform', showFilters && 'rotate-180')} />
               </button>
 
               {showFilters && canUseFilters && (
-                <div className="mt-3 space-y-3 rounded-lg border border-brand-border bg-brand-bg p-4">
+                <div className="mt-3 space-y-3 rounded-xl border-[2px] border-[#111] bg-[#FDEBD3] p-4">
                   <FilterSelect label="Study Topic" value={filters.topic} onChange={(v) => setFilters({ ...filters, topic: v })} options={STUDY_TOPICS} />
                   <FilterSelect label="Course Level" value={filters.courseLevel} onChange={(v) => setFilters({ ...filters, courseLevel: v })} options={COURSE_LEVELS} />
                   <FilterSelect label="Degree Type" value={filters.degreeType} onChange={(v) => setFilters({ ...filters, degreeType: v })} options={DEGREE_TYPES} />
@@ -808,7 +840,7 @@ export default function ConnectPage() {
             <button
               onClick={handleStartQueue}
               disabled={!isConnected}
-              className="w-full glow-btn flex items-center justify-center gap-2 rounded-full bg-brand-accent py-4 text-base font-black text-white hover:bg-brand-accent-hover disabled:opacity-50 transition-colors"
+              className="w-full bb-btn bb-btn-green flex items-center justify-center gap-2 rounded-full py-4 text-base font-black disabled:opacity-50"
             >
               <Zap className="h-5 w-5" />
               {mode === 'video' ? 'Start Video Connect' : 'Start Random Connect'}
@@ -824,11 +856,11 @@ export default function ConnectPage() {
   // ═══════════════════════════════════════════
   if (phase === 'queue') {
     return (
-      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12">
+      <div className="min-h-[calc(100vh-4rem)] bb-grid flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md text-center">
           {/* Show camera preview while in queue for video mode */}
           {mode === 'video' && cameraReady && (
-            <div className="relative aspect-video rounded-2xl bg-brand-bg border-2 border-brand-border overflow-hidden mb-6 mx-auto max-w-xs">
+            <div className="relative aspect-video rounded-2xl bg-[#111] border-[3px] border-[#111] overflow-hidden mb-6 mx-auto max-w-xs shadow-[4px_4px_0px_#111]">
               <video
                 ref={localVideoRef}
                 autoPlay
@@ -837,7 +869,7 @@ export default function ConnectPage() {
                 className="w-full h-full object-cover"
                 style={{ transform: 'scaleX(-1)' }}
               />
-              <div className="absolute top-2 left-2 rounded-full bg-brand-accent/20 backdrop-blur-sm px-2 py-1 text-[10px] text-brand-accent font-medium">
+              <div className="absolute top-2 left-2 rounded-full bg-[#00D09C] px-2 py-1 text-[10px] text-white font-bold border-[2px] border-[#111]">
                 You
               </div>
             </div>
@@ -845,56 +877,56 @@ export default function ConnectPage() {
 
           {/* Animated searching indicator */}
           <div className="relative mb-8">
-            <div className="mx-auto h-32 w-32 rounded-full border-4 border-brand-accent/20 flex items-center justify-center">
-              <div className="h-24 w-24 rounded-full border-4 border-brand-accent/40 flex items-center justify-center animate-pulse">
-                <div className="h-16 w-16 rounded-full bg-brand-accent/20 flex items-center justify-center">
-                  <Zap className="h-8 w-8 text-brand-accent" />
+            <div className="mx-auto h-32 w-32 rounded-full border-[3px] border-[#00D09C]/30 flex items-center justify-center">
+              <div className="h-24 w-24 rounded-full border-[3px] border-[#00D09C]/50 flex items-center justify-center animate-pulse">
+                <div className="h-16 w-16 rounded-full bg-[#00D09C] border-[3px] border-[#111] flex items-center justify-center shadow-[3px_3px_0px_#111]">
+                  <Zap className="h-8 w-8 text-white" />
                 </div>
               </div>
             </div>
             <div className="absolute inset-0 animate-spin" style={{ animationDuration: '3s' }}>
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 h-3 w-3 rounded-full bg-brand-accent" />
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 h-3 w-3 rounded-full bg-[#00D09C] border-[2px] border-[#111]" />
             </div>
             <div className="absolute inset-0 animate-spin" style={{ animationDuration: '4s', animationDirection: 'reverse' }}>
-              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 h-2 w-2 rounded-full bg-brand-accent" />
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 h-2 w-2 rounded-full bg-[#00D09C]" />
             </div>
           </div>
 
-          <h2 className="text-2xl font-black text-white mb-2">Finding Your Study Partner</h2>
-          <p className="text-brand-text-secondary text-sm mb-2">
+          <h2 className="text-2xl font-black text-[#111] mb-2">Finding Your Study Partner</h2>
+          <p className="text-[#555] text-sm mb-2">
             Matching you with a verified student
             <span className="inline-flex ml-1">
-              <span className="dot-animate h-1 w-1 rounded-full bg-brand-accent mx-0.5" />
-              <span className="dot-animate h-1 w-1 rounded-full bg-brand-accent mx-0.5" />
-              <span className="dot-animate h-1 w-1 rounded-full bg-brand-accent mx-0.5" />
+              <span className="dot-animate h-1 w-1 rounded-full bg-[#00D09C] mx-0.5" />
+              <span className="dot-animate h-1 w-1 rounded-full bg-[#00D09C] mx-0.5" />
+              <span className="dot-animate h-1 w-1 rounded-full bg-[#00D09C] mx-0.5" />
             </span>
           </p>
-          <p className="text-xs text-brand-accent mb-6">
+          <p className="text-xs text-[#00D09C] font-bold mb-6">
             💡 Open this page in another browser to test matching!
           </p>
 
           {/* Queue info */}
-          <div className="rounded-2xl border-2 border-brand-border bg-brand-card p-6 space-y-4 mb-6">
+          <div className="bb-card bg-white p-6 space-y-4 mb-6">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-brand-text-muted flex items-center gap-2">
+              <span className="text-[#888] flex items-center gap-2">
                 <Clock className="h-4 w-4" /> Wait time
               </span>
-              <span className="font-mono font-bold text-brand-text-primary">
+              <span className="font-mono font-black text-[#111]">
                 {Math.floor(queueTime / 60)}:{(queueTime % 60).toString().padStart(2, '0')}
               </span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-brand-text-muted flex items-center gap-2">
+              <span className="text-[#888] flex items-center gap-2">
                 <User className="h-4 w-4" /> Online
               </span>
-              <span className="font-mono font-bold text-brand-text-primary">{onlineCount}</span>
+              <span className="font-mono font-black text-[#111]">{onlineCount}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-brand-text-muted flex items-center gap-2">
+              <span className="text-[#888] flex items-center gap-2">
                 {mode === 'text' ? <MessageSquare className="h-4 w-4" /> : <Video className="h-4 w-4" />}
                 Mode
               </span>
-              <span className="font-medium text-brand-accent capitalize">{mode} Chat</span>
+              <span className="font-bold text-[#00D09C] capitalize">{mode} Chat</span>
             </div>
           </div>
 
@@ -904,7 +936,7 @@ export default function ConnectPage() {
               cleanupWebRTC();
               setPhase('lobby');
             }}
-            className="rounded-lg border border-brand-border px-6 py-2.5 text-sm font-medium text-brand-text-secondary hover:text-brand-text-primary hover:border-brand-accent/50 transition-colors"
+            className="rounded-xl border-[2px] border-[#111] bg-white px-6 py-2.5 text-sm font-bold text-[#111] shadow-[3px_3px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
           >
             Cancel
           </button>
@@ -918,30 +950,127 @@ export default function ConnectPage() {
   // ═══════════════════════════════════════════
   if (phase === 'chat') {
     return (
-      <div className="h-[calc(100vh-4rem)] flex flex-col">
+      <div className={cn(
+        'flex flex-col',
+        isFullscreen ? 'h-screen' : 'h-[calc(100vh-4rem)]'
+      )}>
         {/* Chat header */}
-        <div className="flex items-center justify-between border-b border-brand-border bg-brand-card px-4 py-3">
+        <div className="flex items-center justify-between border-b-[3px] border-[#111] bg-white px-4 py-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-accent/20">
-              <User className="h-4 w-4 text-brand-accent" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#00D09C] border-[2px] border-[#111]">
+              <User className="h-4 w-4 text-white" />
             </div>
             <div>
-              <p className="text-sm font-semibold">{peerName}</p>
-              <p className="text-xs text-brand-success flex items-center gap-1">
-                <span className="h-1.5 w-1.5 rounded-full bg-brand-success" />
+              <p className="text-sm font-black text-[#111]">{peerName}</p>
+              <p className="text-xs text-[#00D09C] flex items-center gap-1 font-semibold">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#00D09C]" />
                 {peerTyping ? 'Typing...' : 'Connected'}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            {mode === 'video' && (
-              <>
+            <button
+              onClick={toggleFullscreen}
+              className="rounded-xl bg-[#FDEBD3] border-[2px] border-[#111] p-2 text-[#888] hover:text-[#B794F6] shadow-[2px_2px_0px_#111] hover:shadow-[1px_1px_0px_#111] transition-all"
+              title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+            >
+              {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+            </button>
+            <button
+              onClick={handleSkip}
+              className="rounded-xl bg-[#FDEBD3] border-[2px] border-[#111] p-2 text-[#888] hover:text-[#FB923C] shadow-[2px_2px_0px_#111] hover:shadow-[1px_1px_0px_#111] transition-all"
+              title="Skip to next"
+            >
+              <SkipForward className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setShowReport(true)}
+              className="rounded-xl bg-[#FDEBD3] border-[2px] border-[#111] p-2 text-[#888] hover:text-[#FF4757] shadow-[2px_2px_0px_#111] hover:shadow-[1px_1px_0px_#111] transition-all"
+              title="Report user"
+            >
+              <Flag className="h-4 w-4" />
+            </button>
+            {mode === 'text' && (
+              <button
+                onClick={handleEndChat}
+                className="rounded-xl bg-[#FF6B6B] border-[2px] border-[#111] px-3 py-2 text-sm font-bold text-white shadow-[2px_2px_0px_#111] hover:shadow-[1px_1px_0px_#111] transition-all"
+              >
+                End Chat
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Main content: video + chat side-by-side on desktop, stacked on mobile */}
+        <div className={cn(
+          'flex-1 flex overflow-hidden',
+          mode === 'video' ? 'flex-col md:flex-row' : 'flex-col'
+        )}>
+          {/* Video section (if video mode) */}
+          {mode === 'video' && (
+            <div className="flex flex-col md:flex-1 bg-[#111] md:border-r-[3px] border-[#111]">
+              {/* Videos: vertical stack on mobile, side-by-side on sm+ */}
+              <div className="flex flex-col sm:flex-row gap-2 p-2 flex-1 min-h-0">
+                {/* Remote video (peer) */}
+                <div className="relative flex-1 rounded-xl bg-[#1a1a2e] border-[2px] border-[#333] overflow-hidden min-h-[140px] sm:min-h-[180px]">
+                  <video
+                    ref={remoteVideoRef}
+                    autoPlay
+                    playsInline
+                    className={cn('w-full h-full object-cover', !remoteStreamActive && 'hidden')}
+                  />
+                  {!remoteStreamActive && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <User className="h-10 w-10 sm:h-12 sm:w-12 text-white/20 mb-2" />
+                      <p className="text-xs text-white/50">{peerName}</p>
+                      <p className="text-[10px] text-white/30 mt-1 animate-pulse">Connecting video...</p>
+                    </div>
+                  )}
+                  <div className="absolute top-2 left-2 rounded-full bg-[#00D09C] px-2 py-0.5 text-[10px] text-white font-bold border-[2px] border-[#111]">
+                    {peerName}
+                  </div>
+                </div>
+
+                {/* Local video (you) */}
+                <div className="relative flex-1 rounded-xl bg-[#1a1a2e] border-[2px] border-[#333] overflow-hidden min-h-[140px] sm:min-h-[180px]">
+                  {cameraReady && !isVideoOff ? (
+                    <video
+                      ref={localVideoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full h-full object-cover"
+                      style={{ transform: 'scaleX(-1)' }}
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full">
+                      {isVideoOff ? (
+                        <>
+                          <VideoOff className="h-8 w-8 text-white/30 mb-2" />
+                          <p className="text-xs text-white/50">Camera Off</p>
+                        </>
+                      ) : (
+                        <>
+                          <User className="h-10 w-10 sm:h-12 sm:w-12 text-white/20 mb-2" />
+                          <p className="text-xs text-white/50">Your Camera</p>
+                        </>
+                      )}
+                    </div>
+                  )}
+                  <div className="absolute top-2 left-2 rounded-full bg-[#00D09C] px-2 py-0.5 text-[10px] text-white font-bold border-[2px] border-[#111]">
+                    You
+                  </div>
+                </div>
+              </div>
+
+              {/* Video controls bar */}
+              <div className="flex items-center justify-center gap-3 px-3 py-2 border-t border-[#333] bg-[#0a0a15]">
                 <button
                   onClick={toggleMute}
                   className={cn(
-                    'rounded-lg p-2 transition-colors',
-                    isMuted ? 'bg-brand-danger/20 text-brand-danger' : 'bg-brand-bg text-brand-text-muted hover:text-brand-text-primary'
+                    'rounded-full p-2.5 border-[2px] transition-colors',
+                    isMuted ? 'bg-[#FF4757] border-[#FF4757] text-white' : 'bg-transparent border-[#555] text-white/70 hover:text-white'
                   )}
                 >
                   {isMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
@@ -949,226 +1078,193 @@ export default function ConnectPage() {
                 <button
                   onClick={toggleVideo}
                   className={cn(
-                    'rounded-lg p-2 transition-colors',
-                    isVideoOff ? 'bg-brand-danger/20 text-brand-danger' : 'bg-brand-bg text-brand-text-muted hover:text-brand-text-primary'
+                    'rounded-full p-2.5 border-[2px] transition-colors',
+                    isVideoOff ? 'bg-[#FF4757] border-[#FF4757] text-white' : 'bg-transparent border-[#555] text-white/70 hover:text-white'
                   )}
                 >
                   {isVideoOff ? <VideoOff className="h-4 w-4" /> : <VideoIcon className="h-4 w-4" />}
                 </button>
-              </>
-            )}
-            <button
-              onClick={handleSkip}
-              className="rounded-lg bg-brand-bg p-2 text-brand-text-muted hover:text-brand-warning transition-colors"
-              title="Skip to next"
-            >
-              <SkipForward className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => setShowReport(true)}
-              className="rounded-lg bg-brand-bg p-2 text-brand-text-muted hover:text-brand-danger transition-colors"
-              title="Report user"
-            >
-              <Flag className="h-4 w-4" />
-            </button>
-            <button
-              onClick={handleEndChat}
-              className="rounded-lg bg-brand-danger/10 px-3 py-2 text-sm font-medium text-brand-danger hover:bg-brand-danger/20 transition-colors"
-            >
-              End Chat
-            </button>
-          </div>
-        </div>
-
-        {/* Video section (if video mode) */}
-        {mode === 'video' && (
-          <div className="grid grid-cols-2 gap-2 p-2 bg-brand-bg border-b border-brand-border">
-            <div className="relative aspect-video rounded-xl bg-brand-chat border border-brand-border overflow-hidden">
-              {cameraReady && !isVideoOff ? (
-                <video
-                  ref={localVideoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="w-full h-full object-cover"
-                  style={{ transform: 'scaleX(-1)' }}
-                />
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full">
-                  {isVideoOff ? (
-                    <>
-                      <VideoOff className="h-8 w-8 text-brand-text-muted mb-2" />
-                      <p className="text-xs text-brand-text-muted">Camera Off</p>
-                    </>
-                  ) : (
-                    <>
-                      <User className="h-12 w-12 text-brand-accent/30 mb-2" />
-                      <p className="text-xs text-brand-text-muted">Your Camera</p>
-                    </>
-                  )}
-                </div>
-              )}
-              <div className="absolute top-2 left-2 rounded-full bg-black/50 backdrop-blur-sm px-2 py-0.5 text-[10px] text-white font-medium">
-                You
-              </div>
-            </div>
-
-            <div className="relative aspect-video rounded-xl bg-brand-chat border border-brand-border overflow-hidden">
-              <video
-                ref={remoteVideoRef}
-                autoPlay
-                playsInline
-                className={cn('w-full h-full object-cover', !remoteStreamActive && 'hidden')}
-              />
-              {!remoteStreamActive && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <User className="h-12 w-12 text-brand-accent/30 mb-2" />
-                  <p className="text-xs text-brand-text-muted">{peerName}</p>
-                  <p className="text-[10px] text-brand-text-muted mt-1 animate-pulse">Connecting video...</p>
-                </div>
-              )}
-              <div className="absolute top-2 left-2 rounded-full bg-black/50 backdrop-blur-sm px-2 py-0.5 text-[10px] text-white font-medium">
-                {peerName}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Messages area */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-brand-chat">
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={cn(
-                'max-w-[80%]',
-                msg.type === 'system' && 'mx-auto max-w-none text-center',
-                msg.senderId === 'self' && 'ml-auto',
-                msg.senderId === 'peer' && 'mr-auto',
-              )}
-            >
-              {msg.type === 'system' ? (
-                <div className="rounded-lg bg-brand-bg/50 border border-brand-border px-4 py-2 text-xs text-brand-text-muted">
-                  {msg.content}
-                </div>
-              ) : (
-                <div
+                {/* Mobile chat toggle */}
+                <button
+                  onClick={() => setMobileChatOpen(!mobileChatOpen)}
                   className={cn(
-                    'rounded-2xl px-4 py-2.5',
-                    msg.senderId === 'self'
-                      ? 'bg-brand-accent text-white rounded-br-md'
-                      : 'bg-brand-card border border-brand-border text-brand-text-primary rounded-bl-md'
+                    'rounded-full p-2.5 border-[2px] transition-colors md:hidden',
+                    mobileChatOpen ? 'bg-[#00D09C] border-[#00D09C] text-white' : 'bg-transparent border-[#555] text-white/70 hover:text-white'
                   )}
+                  title="Toggle chat"
                 >
-                  <p className="text-sm">{msg.content}</p>
-                  <p className={cn('text-[10px] mt-1', msg.senderId === 'self' ? 'text-white/60' : 'text-brand-text-muted')}>
-                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </p>
-                </div>
-              )}
-            </div>
-          ))}
-
-          {peerTyping && (
-            <div className="mr-auto max-w-[80%]">
-              <div className="rounded-2xl bg-brand-card border border-brand-border px-4 py-3 rounded-bl-md inline-flex items-center gap-1">
-                <span className="dot-animate h-2 w-2 rounded-full bg-brand-text-muted" />
-                <span className="dot-animate h-2 w-2 rounded-full bg-brand-text-muted" />
-                <span className="dot-animate h-2 w-2 rounded-full bg-brand-text-muted" />
+                  <MessageCircle className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={handleEndChat}
+                  className="rounded-full bg-[#FF6B6B] border-[2px] border-[#111] px-4 py-2.5 text-xs font-bold text-white shadow-[2px_2px_0px_#111] hover:shadow-[1px_1px_0px_#111] transition-all"
+                >
+                  End
+                </button>
               </div>
             </div>
           )}
-          <div ref={messagesEndRef} />
-        </div>
 
-        {/* Icebreaker / Prefilled Messages */}
-        {showIcebreakers && messages.filter(m => m.senderId === 'self').length === 0 && (
-          <div className="border-t border-brand-border bg-brand-card/50 px-3 py-2">
-            <div className="flex items-center gap-1.5 mb-2">
-              <Sparkles className="h-3.5 w-3.5 text-brand-accent" />
-              <span className="text-xs text-brand-text-muted font-medium">Break the ice — tap to send</span>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {ICEBREAKER_MESSAGES.map((ice, i) => (
+          {/* Chat panel */}
+          <div className={cn(
+            'flex flex-col min-h-0 border-[#111]',
+            mode === 'video'
+              ? cn(
+                  // Mobile: absolute overlay that slides up/down
+                  'md:relative md:h-auto md:w-80 lg:w-96 md:flex-none md:border-t-0',
+                  'max-md:absolute max-md:bottom-0 max-md:left-0 max-md:right-0 max-md:z-30 max-md:transition-transform max-md:duration-300 max-md:ease-in-out',
+                  mobileChatOpen
+                    ? 'max-md:translate-y-0 max-md:h-[65%] border-t-[3px]'
+                    : 'max-md:translate-y-full max-md:h-0 max-md:overflow-hidden'
+                )
+              : 'flex-1 border-t-[3px]'
+          )}>
+            {/* Mobile chat header - close button (video mode only) */}
+            {mode === 'video' && mobileChatOpen && (
+              <div className="flex items-center justify-between px-3 py-2 bg-white border-b-[2px] border-[#111] md:hidden">
+                <span className="text-xs font-black text-[#111]">Chat</span>
                 <button
-                  key={i}
-                  onClick={() => handleSendMessage(`${ice.emoji} ${ice.text}`)}
-                  className="rounded-full border border-brand-border bg-brand-bg px-3 py-1.5 text-xs text-brand-text-secondary hover:border-brand-accent/50 hover:text-brand-accent transition-colors"
+                  onClick={() => setMobileChatOpen(false)}
+                  className="rounded-lg bg-[#FDEBD3] border-[2px] border-[#111] p-1 text-[#888] hover:text-[#111]"
                 >
-                  {ice.emoji} {ice.text}
+                  <ChevronDown className="h-3.5 w-3.5" />
                 </button>
+              </div>
+            )}
+            {/* Messages area */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-[#FDEBD3]">
+              {messages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={cn(
+                    'max-w-[85%]',
+                    msg.type === 'system' && 'mx-auto max-w-none text-center',
+                    msg.senderId === 'self' && 'ml-auto',
+                    msg.senderId === 'peer' && 'mr-auto',
+                  )}
+                >
+                  {msg.type === 'system' ? (
+                    <div className="rounded-xl bg-white/70 border-[2px] border-[#ddd] px-3 py-1.5 text-[11px] text-[#888]">
+                      {msg.content}
+                    </div>
+                  ) : (
+                    <div
+                      className={cn(
+                        'rounded-2xl px-3 py-2 border-[2px]',
+                        msg.senderId === 'self'
+                          ? 'bg-[#00D09C] border-[#111] text-white rounded-br-md shadow-[2px_2px_0px_#111]'
+                          : 'bg-white border-[#111] text-[#111] rounded-bl-md shadow-[2px_2px_0px_#111]'
+                      )}
+                    >
+                      <p className="text-sm">{msg.content}</p>
+                      <p className={cn('text-[10px] mt-0.5', msg.senderId === 'self' ? 'text-white/60' : 'text-[#888]')}>
+                        {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                  )}
+                </div>
               ))}
-            </div>
-          </div>
-        )}
 
-        {/* Quick replies (after receiving a peer message) */}
-        {!showIcebreakers && messages.length > 0 && messages[messages.length - 1]?.senderId === 'peer' && (
-          <div className="border-t border-brand-border bg-brand-card/50 px-3 py-2">
-            <div className="flex flex-wrap gap-1.5">
-              {QUICK_REPLIES.map((reply, i) => (
+              {peerTyping && (
+                <div className="mr-auto max-w-[85%]">
+                  <div className="rounded-2xl bg-white border-[2px] border-[#111] px-3 py-2.5 rounded-bl-md inline-flex items-center gap-1 shadow-[2px_2px_0px_#111]">
+                    <span className="dot-animate h-1.5 w-1.5 rounded-full bg-[#888]" />
+                    <span className="dot-animate h-1.5 w-1.5 rounded-full bg-[#888]" />
+                    <span className="dot-animate h-1.5 w-1.5 rounded-full bg-[#888]" />
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Icebreaker / Prefilled Messages */}
+            {showIcebreakers && messages.filter(m => m.senderId === 'self').length === 0 && (
+              <div className="border-t-[2px] border-[#111] bg-white px-2 py-1.5">
+                <div className="flex items-center gap-1 mb-1">
+                  <Sparkles className="h-3 w-3 text-[#00D09C]" />
+                  <span className="text-[10px] text-[#888] font-bold">Break the ice</span>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {ICEBREAKER_MESSAGES.map((ice, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleSendMessage(`${ice.emoji} ${ice.text}`)}
+                      className="rounded-full border-[2px] border-[#111] bg-[#FDEBD3] px-2 py-1 text-[11px] text-[#555] hover:bg-[#00D09C] hover:text-white transition-colors font-medium"
+                    >
+                      {ice.emoji} {ice.text}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Quick replies */}
+            {!showIcebreakers && messages.length > 0 && messages[messages.length - 1]?.senderId === 'peer' && (
+              <div className="border-t-[2px] border-[#111] bg-white px-2 py-1.5">
+                <div className="flex flex-wrap gap-1">
+                  {QUICK_REPLIES.map((reply, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleSendMessage(reply)}
+                      className="rounded-full border-[2px] border-[#111] bg-[#FDEBD3] px-2 py-1 text-[11px] text-[#555] hover:bg-[#00D09C] hover:text-white transition-colors font-medium"
+                    >
+                      {reply}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Message input */}
+            <div className="border-t-[3px] border-[#111] bg-white p-2">
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={inputMessage}
+                  onChange={(e) => {
+                    setInputMessage(e.target.value);
+                    handleTyping();
+                  }}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                  placeholder="Type a message..."
+                  className="flex-1 rounded-xl border-[2px] border-[#111] bg-[#FDEBD3] px-3 py-2 text-sm text-[#111] placeholder:text-[#aaa] focus:border-[#00D09C] focus:ring-1 focus:ring-[#00D09C] outline-none transition-colors"
+                />
                 <button
-                  key={i}
-                  onClick={() => handleSendMessage(reply)}
-                  className="rounded-full border border-brand-border bg-brand-bg px-3 py-1.5 text-xs text-brand-text-secondary hover:border-brand-accent/50 hover:text-brand-accent transition-colors"
+                  onClick={() => handleSendMessage()}
+                  disabled={!inputMessage.trim()}
+                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#00D09C] border-[2px] border-[#111] text-white shadow-[2px_2px_0px_#111] hover:shadow-[1px_1px_0px_#111] disabled:opacity-50 transition-all"
                 >
-                  {reply}
+                  <Send className="h-4 w-4" />
                 </button>
-              ))}
+              </div>
             </div>
           </div>
-        )}
-
-        {/* Message input */}
-        <div className="border-t border-brand-border bg-brand-card p-3">
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={inputMessage}
-              onChange={(e) => {
-                setInputMessage(e.target.value);
-                handleTyping();
-              }}
-              onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-              placeholder="Type a message..."
-              className="flex-1 rounded-xl border border-brand-border bg-brand-bg px-4 py-2.5 text-sm text-brand-text-primary placeholder:text-brand-text-muted focus:border-brand-accent focus:ring-1 focus:ring-brand-accent outline-none transition-colors"
-            />
-            <button
-              onClick={() => handleSendMessage()}
-              disabled={!inputMessage.trim()}
-              className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-accent text-white hover:bg-brand-accent-hover disabled:opacity-50 transition-colors"
-            >
-              <Send className="h-4 w-4" />
-            </button>
-          </div>
-          <p className="text-[10px] text-brand-text-muted mt-2 text-center">
-            🔒 Messages are not stored • Monitored for safety • Report violations
-          </p>
         </div>
 
         {/* Report Modal */}
         {showReport && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div className="w-full max-w-md rounded-2xl border border-brand-border bg-brand-card p-6">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="w-full max-w-md bb-card bg-white p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold flex items-center gap-2">
-                  <Flag className="h-5 w-5 text-brand-danger" />
+                <h3 className="text-lg font-black text-[#111] flex items-center gap-2">
+                  <Flag className="h-5 w-5 text-[#FF4757]" />
                   Report User
                 </h3>
                 <button onClick={() => setShowReport(false)}>
-                  <X className="h-5 w-5 text-brand-text-muted hover:text-brand-text-primary" />
+                  <X className="h-5 w-5 text-[#888] hover:text-[#111]" />
                 </button>
               </div>
 
-              <p className="text-sm text-brand-text-secondary mb-4">
+              <p className="text-sm text-[#555] mb-4">
                 Reports are logged and reviewed. False reports may result in your own account suspension.
               </p>
 
               <div className="space-y-3 mb-4">
-                <label className="block text-sm font-medium text-brand-text-secondary">Reason</label>
+                <label className="block text-sm font-bold text-[#555]">Reason</label>
                 <select
                   value={reportReason}
                   onChange={(e) => setReportReason(e.target.value as ReportReason)}
-                  className="w-full rounded-lg border border-brand-border bg-brand-bg px-3 py-2.5 text-sm text-brand-text-primary outline-none focus:border-brand-accent"
+                  className="w-full rounded-xl border-[2px] border-[#111] bg-[#FDEBD3] px-3 py-2.5 text-sm text-[#111] outline-none focus:border-[#00D09C]"
                 >
                   <option value="harassment">Harassment or Bullying</option>
                   <option value="nudity">Nudity or Sexual Content</option>
@@ -1179,26 +1275,26 @@ export default function ConnectPage() {
                   <option value="other">Other</option>
                 </select>
 
-                <label className="block text-sm font-medium text-brand-text-secondary">Description (optional)</label>
+                <label className="block text-sm font-bold text-[#555]">Description (optional)</label>
                 <textarea
                   value={reportDescription}
                   onChange={(e) => setReportDescription(e.target.value)}
                   placeholder="Provide additional details..."
                   rows={3}
-                  className="w-full rounded-lg border border-brand-border bg-brand-bg px-3 py-2.5 text-sm text-brand-text-primary placeholder:text-brand-text-muted outline-none focus:border-brand-accent resize-none"
+                  className="w-full rounded-xl border-[2px] border-[#111] bg-[#FDEBD3] px-3 py-2.5 text-sm text-[#111] placeholder:text-[#aaa] outline-none focus:border-[#00D09C] resize-none"
                 />
               </div>
 
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowReport(false)}
-                  className="flex-1 rounded-lg border border-brand-border py-2.5 text-sm font-medium text-brand-text-secondary hover:text-brand-text-primary transition-colors"
+                  className="flex-1 rounded-xl border-[2px] border-[#111] bg-white py-2.5 text-sm font-bold text-[#111] shadow-[3px_3px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleReport}
-                  className="flex-1 rounded-lg bg-brand-danger py-2.5 text-sm font-semibold text-white hover:bg-brand-danger/90 transition-colors"
+                  className="flex-1 rounded-xl border-[2px] border-[#111] bg-[#FF6B6B] py-2.5 text-sm font-bold text-white shadow-[3px_3px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
                 >
                   Submit Report
                 </button>
@@ -1215,13 +1311,13 @@ export default function ConnectPage() {
   // ═══════════════════════════════════════════
   if (phase === 'ended') {
     return (
-      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12">
+      <div className="min-h-[calc(100vh-4rem)] bb-grid flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md text-center">
-          <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-card border border-brand-border mb-4">
-            <CheckCircle2 className="h-7 w-7 text-brand-success" />
+          <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[#00D09C] border-[3px] border-[#111] shadow-[3px_3px_0px_#111] mb-4">
+            <CheckCircle2 className="h-7 w-7 text-white" />
           </div>
-          <h2 className="text-2xl font-black text-white mb-2">Chat Ended</h2>
-          <p className="text-brand-text-secondary text-sm mb-8">
+          <h2 className="text-2xl font-black text-[#111] mb-2">Chat Ended</h2>
+          <p className="text-[#555] text-sm mb-8">
             How was your study connect experience?
           </p>
 
@@ -1229,10 +1325,10 @@ export default function ConnectPage() {
             <button
               onClick={() => setRating('good')}
               className={cn(
-                'flex items-center gap-2 rounded-xl border px-6 py-3 text-sm font-medium transition-all',
+                'flex items-center gap-2 rounded-xl border-[2px] px-6 py-3 text-sm font-bold transition-all',
                 rating === 'good'
-                  ? 'border-brand-success bg-brand-success/10 text-brand-success'
-                  : 'border-brand-border text-brand-text-secondary hover:border-brand-success/50'
+                  ? 'border-[#111] bg-[#00D09C] text-white shadow-[3px_3px_0px_#111]'
+                  : 'border-[#ddd] bg-white text-[#555] hover:border-[#00D09C]'
               )}
             >
               <ThumbsUp className="h-5 w-5" />
@@ -1241,10 +1337,10 @@ export default function ConnectPage() {
             <button
               onClick={() => setRating('bad')}
               className={cn(
-                'flex items-center gap-2 rounded-xl border px-6 py-3 text-sm font-medium transition-all',
+                'flex items-center gap-2 rounded-xl border-[2px] px-6 py-3 text-sm font-bold transition-all',
                 rating === 'bad'
-                  ? 'border-brand-danger bg-brand-danger/10 text-brand-danger'
-                  : 'border-brand-border text-brand-text-secondary hover:border-brand-danger/50'
+                  ? 'border-[#111] bg-[#FF6B6B] text-white shadow-[3px_3px_0px_#111]'
+                  : 'border-[#ddd] bg-white text-[#555] hover:border-[#FF6B6B]'
               )}
             >
               <ThumbsDown className="h-5 w-5" />
@@ -1255,14 +1351,14 @@ export default function ConnectPage() {
           <div className="flex flex-col gap-3">
             <button
               onClick={handleReconnect}
-              className="glow-btn flex items-center justify-center gap-2 rounded-xl bg-brand-accent py-3 text-sm font-semibold text-white hover:bg-brand-accent-hover transition-colors"
+              className="bb-btn bb-btn-green flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold"
             >
               <RefreshCw className="h-4 w-4" />
               Connect Again
             </button>
             <Link
               href="/dashboard"
-              className="rounded-xl border border-brand-border py-3 text-sm font-medium text-brand-text-secondary hover:text-brand-text-primary hover:border-brand-accent/50 transition-colors text-center"
+              className="rounded-xl border-[2px] border-[#111] bg-white py-3 text-sm font-bold text-[#111] shadow-[3px_3px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[2px] hover:translate-y-[2px] transition-all text-center block"
             >
               Back to Dashboard
             </Link>
@@ -1291,11 +1387,11 @@ function FilterSelect({
 }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-brand-text-muted mb-1">{label}</label>
+      <label className="block text-xs font-bold text-[#888] mb-1">{label}</label>
       <select
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border border-brand-border bg-brand-card px-3 py-2 text-sm text-brand-text-primary outline-none focus:border-brand-accent"
+        className="w-full rounded-lg border-[2px] border-[#111] bg-white px-3 py-2 text-sm text-[#111] outline-none focus:border-[#00D09C]"
       >
         <option value="">Any</option>
         {options.map((opt) => (

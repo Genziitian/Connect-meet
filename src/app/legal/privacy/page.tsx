@@ -1,6 +1,5 @@
 // ============================================================
-// Privacy Policy — GenZ IITian Connect
-// Compliant with DPDP Act 2023, IT Act 2000, IT Rules 2021
+// Privacy Policy — GenZ IITian Connect (Neo-Brutalist Light Theme)
 // ============================================================
 import React from 'react';
 import Link from 'next/link';
@@ -8,27 +7,27 @@ import { Shield, ArrowLeft } from 'lucide-react';
 
 export default function PrivacyPolicyPage() {
   return (
-    <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-12">
+    <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-12 bb-grid">
       <Link
         href="/"
-        className="inline-flex items-center gap-2 text-sm text-brand-text-muted hover:text-brand-text-primary transition-colors mb-8"
+        className="inline-flex items-center gap-2 text-sm text-[#888] hover:text-[#111] font-semibold transition-colors mb-8"
       >
         <ArrowLeft className="h-4 w-4" /> Back to Home
       </Link>
 
       <div className="flex items-center gap-3 mb-8">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-accent/10">
-          <Shield className="h-6 w-6 text-brand-accent" />
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#00D09C] border-[2px] border-[#111]">
+          <Shield className="h-6 w-6 text-white" />
         </div>
         <div>
-          <h1 className="text-3xl font-black text-white">Privacy Policy</h1>
-          <p className="text-brand-text-muted text-sm">
+          <h1 className="text-3xl font-black text-[#111]">Privacy Policy</h1>
+          <p className="text-[#888] text-sm">
             Last updated: March 1, 2026 • Effective immediately
           </p>
         </div>
       </div>
 
-      <div className="prose prose-invert max-w-none space-y-8">
+      <div className="space-y-6">
         <LegalSection title="1. Introduction">
           <p>
             GenZ IITian Connect (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;) is committed to
@@ -50,8 +49,8 @@ export default function PrivacyPolicyPage() {
             <li><strong>Session metadata</strong> — Session ID, timestamps, and IP hash for safety logging</li>
             <li><strong>Reports</strong> — User-submitted reports for moderation</li>
           </ul>
-          <div className="rounded-lg bg-brand-success/5 border border-brand-success/20 p-4 mt-4">
-            <p className="text-sm text-brand-success font-medium">
+          <div className="rounded-xl bg-[#00D09C]/10 border-[2px] border-[#00D09C] p-4 mt-4">
+            <p className="text-sm text-[#00D09C] font-bold">
               ✅ We do NOT collect or store: Chat messages, video content, screen
               recordings, location data, contact lists, or browsing history.
             </p>
@@ -70,9 +69,7 @@ export default function PrivacyPolicyPage() {
         </LegalSection>
 
         <LegalSection title="4. Legal Basis for Processing (DPDP Act 2023)">
-          <p>
-            Under the DPDP Act 2023, we process your data based on:
-          </p>
+          <p>Under the DPDP Act 2023, we process your data based on:</p>
           <ul>
             <li><strong>Consent</strong> — Your explicit consent obtained during onboarding</li>
             <li><strong>Legitimate purpose</strong> — Safety and abuse prevention</li>
@@ -91,9 +88,7 @@ export default function PrivacyPolicyPage() {
         </LegalSection>
 
         <LegalSection title="6. Data Retention">
-          <p>
-            In compliance with the DPDP Act&apos;s data minimization principle:
-          </p>
+          <p>In compliance with the DPDP Act&apos;s data minimization principle:</p>
           <ul>
             <li><strong>Account data</strong> — Retained while account is active; deleted within 30 days of account deletion</li>
             <li><strong>Session metadata</strong> — Retained for 90 days for safety compliance</li>
@@ -102,7 +97,7 @@ export default function PrivacyPolicyPage() {
           </ul>
           <p>
             See our{' '}
-            <Link href="/legal/data-retention" className="text-brand-accent underline">
+            <Link href="/legal/data-retention" className="text-[#00D09C] underline font-semibold">
               Data Retention Policy
             </Link>{' '}
             for full details.
@@ -121,7 +116,7 @@ export default function PrivacyPolicyPage() {
           </ul>
           <p>
             To exercise these rights, visit{' '}
-            <Link href="/legal/data-deletion" className="text-brand-accent underline">
+            <Link href="/legal/data-deletion" className="text-[#00D09C] underline font-semibold">
               Data Deletion Request
             </Link>{' '}
             or contact our Grievance Officer.
@@ -137,7 +132,7 @@ export default function PrivacyPolicyPage() {
           </ul>
         </LegalSection>
 
-        <LegalSection title="9. Children&apos;s Privacy">
+        <LegalSection title="9. Children's Privacy">
           <p>
             This platform is intended for users aged 18 and above. Users under 18
             may only use the platform with verified parental/guardian consent. We
@@ -147,20 +142,12 @@ export default function PrivacyPolicyPage() {
         </LegalSection>
 
         <LegalSection title="10. Grievance Officer">
-          <div className="rounded-lg bg-brand-card border border-brand-border p-4">
-            <p className="text-sm"><strong>Grievance Officer</strong> (as required under IT Rules 2021)</p>
-            <p className="text-sm text-brand-text-secondary mt-1">
-              Name: Grievance Officer — GenZ IITian Connect
-            </p>
-            <p className="text-sm text-brand-text-secondary">
-              Email: grievance@genziitian.com
-            </p>
-            <p className="text-sm text-brand-text-secondary">
-              Response time: Within 48 hours of receipt
-            </p>
-            <p className="text-sm text-brand-text-secondary">
-              Resolution: Within 15 days as per IT Rules 2021
-            </p>
+          <div className="rounded-xl border-[2px] border-[#111] bg-[#FDEBD3] p-4">
+            <p className="text-sm font-bold text-[#111]">Grievance Officer (as required under IT Rules 2021)</p>
+            <p className="text-sm text-[#555] mt-1">Name: Grievance Officer — GenZ IITian Connect</p>
+            <p className="text-sm text-[#555]">Email: grievance@genziitian.com</p>
+            <p className="text-sm text-[#555]">Response time: Within 48 hours of receipt</p>
+            <p className="text-sm text-[#555]">Resolution: Within 15 days as per IT Rules 2021</p>
           </div>
         </LegalSection>
 
@@ -174,9 +161,7 @@ export default function PrivacyPolicyPage() {
         </LegalSection>
 
         <LegalSection title="12. Contact Us">
-          <p>
-            For any privacy-related queries or to exercise your data rights:
-          </p>
+          <p>For any privacy-related queries or to exercise your data rights:</p>
           <ul>
             <li>Email: privacy@genziitian.com</li>
             <li>Grievance Officer: grievance@genziitian.com</li>
@@ -195,9 +180,9 @@ function LegalSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-xl border-2 border-brand-border bg-brand-card p-6">
-      <h2 className="text-xl font-bold mb-4 text-brand-text-primary">{title}</h2>
-      <div className="text-sm text-brand-text-secondary leading-relaxed space-y-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1.5 [&_li]:text-brand-text-secondary [&_strong]:text-brand-text-primary">
+    <section className="bb-card bg-white p-6">
+      <h2 className="text-xl font-black mb-4 text-[#111]">{title}</h2>
+      <div className="text-sm text-[#555] leading-relaxed space-y-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1.5 [&_li]:text-[#555] [&_strong]:text-[#111]">
         {children}
       </div>
     </section>

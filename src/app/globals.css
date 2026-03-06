@@ -2,9 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 :root {
+  /* BunkBuddies-inspired light theme */
+  --bb-bg: #FDEBD3;
+  --bb-green: #00D09C;
+  --bb-purple: #B794F6;
+  --bb-coral: #FF6B6B;
+  --bb-orange: #FB923C;
+  --bb-text: #111111;
+  --bb-border: #111111;
+
+  /* Dark theme (Connect page) */
   --bg-primary: #080D19;
   --bg-card: #0F1629;
   --bg-chat: #0A1020;
@@ -35,41 +45,70 @@ html {
 }
 
 body {
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
+  background-color: var(--bb-bg);
+  color: var(--bb-text);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-track {
-  background: var(--bg-primary);
-}
-::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
+/* ── Light Theme Grid Pattern (BunkBuddies style) ── */
+.bb-grid {
+  background-image:
+    linear-gradient(rgba(200, 160, 130, 0.25) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(200, 160, 130, 0.25) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 
-/* Pulse animation for matching */
-@keyframes matchPulse {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.05);
-    opacity: 0.8;
-  }
+/* ── Neo-Brutalist Button ── */
+.bb-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  border-radius: 0.75rem;
+  border: 3px solid #111;
+  box-shadow: 4px 4px 0px #111;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+.bb-btn:hover {
+  box-shadow: 2px 2px 0px #111;
+  transform: translate(2px, 2px);
+}
+.bb-btn-green {
+  background-color: #00D09C;
+  color: white;
+}
+.bb-btn-purple {
+  background-color: #B794F6;
+  color: #111;
+}
+.bb-btn-coral {
+  background-color: #FF6B6B;
+  color: white;
 }
 
-/* Gradient text — emerald green to teal */
+/* ── Neo-Brutalist Card ── */
+.bb-card {
+  border: 3px solid #111;
+  border-radius: 1rem;
+  box-shadow: 5px 5px 0px #111;
+}
+
+/* ── Scrolling Marquee ── */
+@keyframes scroll-x {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-scroll-x {
+  animation: scroll-x 25s linear infinite;
+}
+
+/* ══════════════════════════════════════════
+   Dark theme styles (for Connect page)
+   ══════════════════════════════════════════ */
+
 .gradient-text {
   background: linear-gradient(135deg, #00D09C 0%, #00E6AC 50%, #34D399 100%);
   -webkit-background-clip: text;
@@ -77,19 +116,16 @@ body {
   background-clip: text;
 }
 
-/* Brand red text (for "IITian" in logo) */
 .brand-red-text {
   color: #FF3B3B;
 }
 
-/* Glass morphism card — dark glass */
 .glass-card {
   background: rgba(15, 22, 41, 0.85);
   backdrop-filter: blur(16px);
   border: 1px solid rgba(28, 42, 58, 0.7);
 }
 
-/* Grid pattern overlay — matches the website dark card grid */
 .grid-pattern {
   background-image:
     linear-gradient(rgba(28, 42, 58, 0.4) 1px, transparent 1px),
@@ -97,7 +133,6 @@ body {
   background-size: 40px 40px;
 }
 
-/* Glow button — green glow */
 .glow-btn {
   position: relative;
   overflow: hidden;
@@ -114,15 +149,12 @@ body {
   opacity: 0;
   transition: opacity 0.3s ease;
 }
-.glow-btn:hover::before {
-  opacity: 1;
-}
+.glow-btn:hover::before { opacity: 1; }
 .glow-btn:hover {
   box-shadow: 0 0 30px rgba(0, 208, 156, 0.35);
   transform: translateY(-2px);
 }
 
-/* Red glow button variant */
 .glow-btn-red {
   position: relative;
   overflow: hidden;
@@ -133,29 +165,11 @@ body {
   transform: translateY(-2px);
 }
 
-/* Chat bubble animations */
-.chat-bubble-enter {
-  animation: slideUp 0.3s ease-out forwards;
+@keyframes matchPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
 }
 
-/* Connection dots animation */
-@keyframes connectionDots {
-  0%, 20% { opacity: 0; }
-  50% { opacity: 1; }
-  80%, 100% { opacity: 0; }
-}
-
-.dot-animate:nth-child(1) { animation: connectionDots 1.5s infinite 0s; }
-.dot-animate:nth-child(2) { animation: connectionDots 1.5s infinite 0.3s; }
-.dot-animate:nth-child(3) { animation: connectionDots 1.5s infinite 0.6s; }
-
-/* Accent card — the green card style from the website */
-.accent-card {
-  background: linear-gradient(135deg, #00D09C 0%, #00A87D 100%);
-  color: #FFFFFF;
-}
-
-/* Dark grid card — the dark card with grid from the website */
 .dark-grid-card {
   background: #0B1120;
   background-image:

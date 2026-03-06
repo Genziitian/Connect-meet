@@ -1,5 +1,5 @@
 // ============================================================
-// Terms of Service — GenZ IITian Connect
+// Terms of Service — GenZ IITian Connect (Neo-Brutalist Light Theme)
 // ============================================================
 import React from 'react';
 import Link from 'next/link';
@@ -7,23 +7,21 @@ import { FileText, ArrowLeft } from 'lucide-react';
 
 export default function TermsPage() {
   return (
-    <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-12">
+    <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-12 bb-grid">
       <Link
         href="/"
-        className="inline-flex items-center gap-2 text-sm text-brand-text-muted hover:text-brand-text-primary transition-colors mb-8"
+        className="inline-flex items-center gap-2 text-sm text-[#888] hover:text-[#111] font-semibold transition-colors mb-8"
       >
         <ArrowLeft className="h-4 w-4" /> Back to Home
       </Link>
 
       <div className="flex items-center gap-3 mb-8">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-accent/10">
-          <FileText className="h-6 w-6 text-brand-accent" />
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#B794F6] border-[2px] border-[#111]">
+          <FileText className="h-6 w-6 text-white" />
         </div>
         <div>
-          <h1 className="text-3xl font-black text-white">Terms of Service</h1>
-          <p className="text-brand-text-muted text-sm">
-            Last updated: March 1, 2026
-          </p>
+          <h1 className="text-3xl font-black text-[#111]">Terms of Service</h1>
+          <p className="text-[#888] text-sm">Last updated: March 1, 2026</p>
         </div>
       </div>
 
@@ -97,10 +95,10 @@ export default function TermsPage() {
         ].map((section) => (
           <div
             key={section.title}
-            className="rounded-xl border-2 border-brand-border bg-brand-card p-6"
+            className="bb-card bg-white p-6"
           >
-            <h2 className="text-lg font-bold mb-3">{section.title}</h2>
-            <p className="text-sm text-brand-text-secondary leading-relaxed whitespace-pre-line">
+            <h2 className="text-lg font-black text-[#111] mb-3">{section.title}</h2>
+            <p className="text-sm text-[#555] leading-relaxed whitespace-pre-line">
               {section.content}
             </p>
           </div>

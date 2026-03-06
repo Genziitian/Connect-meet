@@ -1,18 +1,13 @@
-// ============================================================
-// Navbar Component — GenZ IITian Connect
-// ============================================================
 'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
-import { APP_NAME } from '@/lib/constants';
 import {
   Menu,
   X,
-  Zap,
-  LogOut,
   User,
+  LogOut,
   Shield,
   CreditCard,
   ChevronDown,
@@ -24,30 +19,33 @@ export default function Navbar() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-brand-border bg-brand-bg/95 backdrop-blur-xl">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-[#FDEBD3]/90 backdrop-blur-md border-b-[3px] border-[#111]">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          {/* Logo — matches website: Gen-Z in white, IITian in red */}
-          <Link href="/" className="flex items-center gap-1 group">
-            <span className="text-xl font-black text-white tracking-tight">Gen-Z</span>
-            <span className="text-xl font-black text-brand-red tracking-tight">IITian</span>
-            <span className="text-xs font-medium text-brand-accent ml-1.5 hidden sm:block opacity-70">Connect</span>
+          {/* ── Logo ── */}
+          <Link href="/" className="flex items-center gap-0.5">
+            <span className="text-xl font-black text-[#111]">Gen-Z</span>
+            <span className="text-xl font-black text-[#FF3B3B]">IITian</span>
+            <span className="text-xs font-bold text-[#00D09C] ml-1.5 hidden sm:block">
+              Connect
+            </span>
           </Link>
 
-          {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-1">
+          {/* ── Desktop Links ── */}
+          <div className="hidden md:flex items-center gap-6">
             {isAuthenticated ? (
               <>
                 <NavLink href="/dashboard">Dashboard</NavLink>
-                <NavLink href="/connect">
-                  <span className="flex items-center gap-1">
-                    <span className="relative flex h-2 w-2">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
-                      <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
-                    </span>
-                    Connect
+                <Link
+                  href="/connect"
+                  className="text-sm font-semibold text-[#111] hover:text-[#00D09C] transition-colors flex items-center gap-1.5"
+                >
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
                   </span>
-                </NavLink>
+                  Connect
+                </Link>
                 <NavLink href="/plans">Plans</NavLink>
               </>
             ) : (
@@ -59,56 +57,54 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Right side */}
+          {/* ── Right Side ── */}
           <div className="flex items-center gap-3">
             {isAuthenticated ? (
               <div className="relative">
                 <button
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
-                  className="flex items-center gap-2 rounded-lg border border-brand-border bg-brand-card px-3 py-2 text-sm hover:border-brand-accent/50 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl border-[3px] border-[#111] bg-white shadow-[3px_3px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[2px] hover:translate-y-[2px] transition-all text-sm font-bold"
                 >
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-accent/20">
-                    <User className="h-3.5 w-3.5 text-brand-success" />
-                  </div>
-                  <span className="hidden sm:block text-brand-text-secondary max-w-[120px] truncate">
+                  <User className="h-4 w-4" />
+                  <span className="hidden sm:block max-w-[120px] truncate">
                     {user?.displayName || user?.email}
                   </span>
-                  <span className="rounded-full bg-brand-accent/15 px-2 py-0.5 text-xs text-brand-accent uppercase font-medium">
+                  <span className="rounded-full bg-[#00D09C] px-2 py-0.5 text-xs text-white font-bold uppercase">
                     {user?.planType}
                   </span>
-                  <ChevronDown className="h-3.5 w-3.5 text-brand-text-muted" />
+                  <ChevronDown className="h-3.5 w-3.5" />
                 </button>
 
                 {isProfileOpen && (
-                  <div className="absolute right-0 mt-2 w-56 rounded-xl border border-brand-border bg-brand-card p-2 shadow-2xl animate-slide-down">
-                    <Link
+                  <div className="absolute right-0 mt-2 w-56 rounded-xl border-[3px] border-[#111] bg-white shadow-[4px_4px_0px_#111] p-2 animate-slide-down">
+                    <DropdownLink
                       href="/dashboard"
-                      className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-brand-text-secondary hover:bg-brand-bg hover:text-brand-text-primary transition-colors"
+                      icon={<User className="h-4 w-4" />}
                       onClick={() => setIsProfileOpen(false)}
                     >
-                      <User className="h-4 w-4" /> Dashboard
-                    </Link>
-                    <Link
+                      Dashboard
+                    </DropdownLink>
+                    <DropdownLink
                       href="/plans"
-                      className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-brand-text-secondary hover:bg-brand-bg hover:text-brand-text-primary transition-colors"
+                      icon={<CreditCard className="h-4 w-4" />}
                       onClick={() => setIsProfileOpen(false)}
                     >
-                      <CreditCard className="h-4 w-4" /> Manage Plan
-                    </Link>
-                    <Link
+                      Manage Plan
+                    </DropdownLink>
+                    <DropdownLink
                       href="/legal/privacy"
-                      className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-brand-text-secondary hover:bg-brand-bg hover:text-brand-text-primary transition-colors"
+                      icon={<Shield className="h-4 w-4" />}
                       onClick={() => setIsProfileOpen(false)}
                     >
-                      <Shield className="h-4 w-4" /> Privacy & Safety
-                    </Link>
-                    <hr className="my-1 border-brand-border" />
+                      Privacy
+                    </DropdownLink>
+                    <hr className="my-1 border-[#eee]" />
                     <button
                       onClick={() => {
                         setIsProfileOpen(false);
                         logout();
                       }}
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-brand-danger hover:bg-brand-danger/10 transition-colors"
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-[#FF3B3B] hover:bg-red-50 transition-colors"
                     >
                       <LogOut className="h-4 w-4" /> Sign Out
                     </button>
@@ -118,15 +114,15 @@ export default function Navbar() {
             ) : (
               <Link
                 href="/auth/login"
-                className="rounded-lg bg-black border-2 border-white/20 px-5 py-2 text-sm font-bold text-white hover:bg-brand-card transition-colors"
+                className="px-6 py-2 rounded-xl border-[3px] border-[#111] bg-[#B794F6] font-bold text-sm shadow-[3px_3px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
               >
-                Log in
+                Explore
               </Link>
             )}
 
             {/* Mobile toggle */}
             <button
-              className="md:hidden rounded-lg border border-brand-border p-2 hover:bg-brand-card transition-colors"
+              className="md:hidden rounded-xl border-[3px] border-[#111] p-2 bg-white shadow-[2px_2px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[1px] hover:translate-y-[1px] transition-all"
               onClick={() => setIsMobileOpen(!isMobileOpen)}
             >
               {isMobileOpen ? (
@@ -139,54 +135,100 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile menu */}
+      {/* ── Mobile Menu ── */}
       {isMobileOpen && (
-        <div className="md:hidden border-t border-brand-border bg-brand-card/95 backdrop-blur-xl animate-slide-down">
-          <div className="px-4 py-4 space-y-1">
-            {isAuthenticated ? (
-              <>
-                <MobileNavLink href="/dashboard" onClick={() => setIsMobileOpen(false)}>
-                  Dashboard
-                </MobileNavLink>
-                <MobileNavLink href="/connect" onClick={() => setIsMobileOpen(false)}>
-                  🟢 Connect Now
-                </MobileNavLink>
-                <MobileNavLink href="/plans" onClick={() => setIsMobileOpen(false)}>
-                  Plans
-                </MobileNavLink>
-              </>
-            ) : (
-              <>
-                <MobileNavLink href="/#features" onClick={() => setIsMobileOpen(false)}>
-                  Features
-                </MobileNavLink>
-                <MobileNavLink href="/plans" onClick={() => setIsMobileOpen(false)}>
-                  Pricing
-                </MobileNavLink>
-                <MobileNavLink href="/auth/login" onClick={() => setIsMobileOpen(false)}>
-                  Login
-                </MobileNavLink>
-              </>
-            )}
-          </div>
+        <div className="md:hidden border-t-[3px] border-[#111] bg-white p-4 space-y-1 animate-slide-down">
+          {isAuthenticated ? (
+            <>
+              <MobileLink
+                href="/dashboard"
+                onClick={() => setIsMobileOpen(false)}
+              >
+                Dashboard
+              </MobileLink>
+              <MobileLink
+                href="/connect"
+                onClick={() => setIsMobileOpen(false)}
+              >
+                🟢 Connect Now
+              </MobileLink>
+              <MobileLink
+                href="/plans"
+                onClick={() => setIsMobileOpen(false)}
+              >
+                Plans
+              </MobileLink>
+            </>
+          ) : (
+            <>
+              <MobileLink
+                href="/#features"
+                onClick={() => setIsMobileOpen(false)}
+              >
+                Features
+              </MobileLink>
+              <MobileLink
+                href="/plans"
+                onClick={() => setIsMobileOpen(false)}
+              >
+                Pricing
+              </MobileLink>
+              <MobileLink
+                href="/auth/login"
+                onClick={() => setIsMobileOpen(false)}
+              >
+                Login
+              </MobileLink>
+            </>
+          )}
         </div>
       )}
     </nav>
   );
 }
 
-function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
+/* ── Sub-components ── */
+
+function NavLink({
+  href,
+  children,
+}: {
+  href: string;
+  children: React.ReactNode;
+}) {
   return (
     <Link
       href={href}
-      className="rounded-lg px-3 py-2 text-sm font-medium text-brand-text-secondary hover:text-brand-text-primary hover:bg-brand-card/50 transition-colors"
+      className="text-sm font-semibold text-[#111] hover:text-[#00D09C] transition-colors"
     >
       {children}
     </Link>
   );
 }
 
-function MobileNavLink({
+function DropdownLink({
+  href,
+  icon,
+  onClick,
+  children,
+}: {
+  href: string;
+  icon: React.ReactNode;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium hover:bg-[#FDEBD3] transition-colors"
+      onClick={onClick}
+    >
+      {icon} {children}
+    </Link>
+  );
+}
+
+function MobileLink({
   href,
   onClick,
   children,
@@ -199,7 +241,7 @@ function MobileNavLink({
     <Link
       href={href}
       onClick={onClick}
-      className="block rounded-lg px-4 py-3 text-sm font-medium text-brand-text-secondary hover:text-brand-text-primary hover:bg-brand-bg transition-colors"
+      className="block rounded-lg px-4 py-3 text-sm font-semibold hover:bg-[#FDEBD3] transition-colors"
     >
       {children}
     </Link>

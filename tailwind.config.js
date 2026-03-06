@@ -8,6 +8,18 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        /* BunkBuddies-inspired light theme */
+        bb: {
+          bg: '#FDEBD3',
+          green: '#00D09C',
+          purple: '#B794F6',
+          coral: '#FF6B6B',
+          orange: '#FB923C',
+          text: '#111111',
+          'text-light': '#555555',
+          border: '#111111',
+        },
+        /* Dark theme (Connect page) */
         brand: {
           bg: '#080D19',
           card: '#0F1629',
@@ -39,6 +51,7 @@ module.exports = {
         'slide-up': 'slideUp 0.3s ease-out',
         'slide-down': 'slideDown 0.3s ease-out',
         'fade-in': 'fadeIn 0.5s ease-out',
+        'scroll-x': 'scroll-x 25s linear infinite',
       },
       keyframes: {
         glow: {
@@ -56,6 +69,10 @@ module.exports = {
         fadeIn: {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
+        },
+        'scroll-x': {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' },
         },
       },
       backgroundImage: {

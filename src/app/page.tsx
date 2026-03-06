@@ -1,5 +1,6 @@
 // ============================================================
 // Landing Page — GenZ IITian Connect
+// BunkBuddies-inspired neo-brutalist UI
 // ============================================================
 'use client';
 
@@ -12,339 +13,369 @@ import {
   Users,
   BookOpen,
   Lock,
-  ArrowRight,
   CheckCircle2,
   Star,
   Sparkles,
-  GraduationCap,
 } from 'lucide-react';
 import { PLANS } from '@/lib/constants';
 import { formatINR } from '@/lib/utils';
 
 export default function HomePage() {
   return (
-    <div className="relative overflow-hidden">
-      {/* ═══════════════════════════════════════════
-          HERO — Split: Copy left + SVG Animation right
-         ═══════════════════════════════════════════ */}
-      <section className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-center">
-          {/* Left — Copy */}
-          <div className="max-w-xl">
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 rounded-full border border-brand-accent/30 bg-brand-accent/10 px-4 py-1.5 text-sm text-brand-accent mb-6 animate-fade-in">
-              <Shield className="h-4 w-4" />
-              Verified &bull; Anonymous &bull; Safe
-            </div>
-
-            {/* Pain point heading */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.08] mb-5">
-              <span className="text-white">Online Degree</span>
-              <br />
-              <span className="text-white">feels </span>
-              <span className="text-brand-text-muted line-through decoration-brand-danger/60 decoration-[3px]">lonely?</span>
-              <br />
-              <span className="gradient-text">We fixed that.</span>
-            </h1>
-
-            {/* Short, punchy subtitle */}
-            <p className="text-base sm:text-lg text-brand-text-secondary leading-relaxed mb-8 max-w-md">
-              As an IIT Madras BS student, your campus is your screen.
-              No corridors, no canteen hangouts.
-              <span className="text-white font-semibold"> We built the campus you never had</span> &mdash; connect
-              with verified peers anonymously, right now.
-            </p>
-
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row items-start gap-3 mb-10">
-              <Link
-                href="/auth/login"
-                className="glow-btn group flex items-center gap-2 rounded-full bg-brand-accent px-7 py-3.5 text-base font-bold text-white hover:bg-brand-accent-hover transition-all"
-              >
-                Start Connecting
-                <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-              </Link>
-              <Link
-                href="/plans"
-                className="flex items-center gap-2 rounded-full border-2 border-white/15 bg-white/5 px-7 py-3.5 text-base font-bold text-white hover:border-white/30 transition-colors"
-              >
-                View Plans
-              </Link>
-            </div>
-
-            {/* Micro trust markers */}
-            <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-brand-text-muted">
-              <span className="flex items-center gap-1.5">
-                <CheckCircle2 className="h-3.5 w-3.5 text-brand-accent" />
-                DPDP Act 2023
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Lock className="h-3.5 w-3.5 text-brand-accent" />
-                Zero data stored
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Shield className="h-3.5 w-3.5 text-brand-accent" />
-                Verified students only
-              </span>
-            </div>
-          </div>
-
-          {/* Right — SVG Connection Animation */}
-          <div className="relative flex items-center justify-center lg:justify-end">
-            <div className="relative w-full max-w-lg">
-              {/* Outer glow ring */}
-              <div className="absolute inset-0 rounded-full bg-brand-accent/5 blur-3xl scale-110" />
-
+    <div className="min-h-screen bb-grid">
+      {/* ══════════ HERO ══════════ */}
+      <section className="relative px-4 sm:px-6 lg:px-8 pt-14 sm:pt-24 pb-6 max-w-7xl mx-auto">
+        <div className="text-center max-w-4xl mx-auto">
+          <h1 className="text-5xl sm:text-6xl lg:text-[5.5rem] font-black leading-[1.05] tracking-tight">
+            Online Degree feels{' '}
+            <span className="relative inline-block">
+              lonely?
               <svg
-                viewBox="0 0 500 500"
-                className="w-full h-auto relative z-10"
-                xmlns="http://www.w3.org/2000/svg"
+                className="absolute -bottom-1 left-0 w-full h-3"
+                viewBox="0 0 200 12"
+                fill="none"
+                preserveAspectRatio="none"
               >
-                {/* Background circle */}
-                <circle cx="250" cy="250" r="200" fill="none" stroke="#1C2A3A" strokeWidth="1" opacity="0.5" />
-                <circle cx="250" cy="250" r="150" fill="none" stroke="#1C2A3A" strokeWidth="1" opacity="0.3" />
-                <circle cx="250" cy="250" r="100" fill="none" stroke="#1C2A3A" strokeWidth="1" opacity="0.2" />
-
-                {/* Center node — You */}
-                <circle cx="250" cy="250" r="36" fill="#0F1629" stroke="#00D09C" strokeWidth="2.5">
-                  <animate attributeName="r" values="36;38;36" dur="3s" repeatCount="indefinite" />
-                </circle>
-                <text x="250" y="255" textAnchor="middle" fill="#00D09C" fontSize="13" fontWeight="800" fontFamily="Inter, sans-serif">YOU</text>
-
-                {/* Peer 1 — Top */}
-                <circle cx="250" cy="80" r="24" fill="#0F1629" stroke="#8B9DC3" strokeWidth="1.5" opacity="0.9">
-                  <animate attributeName="opacity" values="0.5;1;0.5" dur="4s" repeatCount="indefinite" />
-                </circle>
-                <text x="250" y="84" textAnchor="middle" fill="#8B9DC3" fontSize="10" fontWeight="600" fontFamily="Inter, sans-serif">Peer</text>
-
-                {/* Peer 2 — Top Right */}
-                <circle cx="400" cy="150" r="24" fill="#0F1629" stroke="#8B9DC3" strokeWidth="1.5">
-                  <animate attributeName="opacity" values="0.7;1;0.7" dur="3.5s" repeatCount="indefinite" />
-                </circle>
-                <text x="400" y="154" textAnchor="middle" fill="#8B9DC3" fontSize="10" fontWeight="600" fontFamily="Inter, sans-serif">Peer</text>
-
-                {/* Peer 3 — Right */}
-                <circle cx="420" cy="300" r="24" fill="#0F1629" stroke="#8B9DC3" strokeWidth="1.5">
-                  <animate attributeName="opacity" values="0.6;1;0.6" dur="5s" repeatCount="indefinite" />
-                </circle>
-                <text x="420" y="304" textAnchor="middle" fill="#8B9DC3" fontSize="10" fontWeight="600" fontFamily="Inter, sans-serif">Peer</text>
-
-                {/* Peer 4 — Bottom */}
-                <circle cx="300" cy="420" r="24" fill="#0F1629" stroke="#8B9DC3" strokeWidth="1.5">
-                  <animate attributeName="opacity" values="0.8;1;0.8" dur="4.2s" repeatCount="indefinite" />
-                </circle>
-                <text x="300" y="424" textAnchor="middle" fill="#8B9DC3" fontSize="10" fontWeight="600" fontFamily="Inter, sans-serif">Peer</text>
-
-                {/* Peer 5 — Bottom Left */}
-                <circle cx="120" cy="380" r="24" fill="#0F1629" stroke="#8B9DC3" strokeWidth="1.5">
-                  <animate attributeName="opacity" values="0.5;1;0.5" dur="3.8s" repeatCount="indefinite" />
-                </circle>
-                <text x="120" y="384" textAnchor="middle" fill="#8B9DC3" fontSize="10" fontWeight="600" fontFamily="Inter, sans-serif">Peer</text>
-
-                {/* Peer 6 — Left */}
-                <circle cx="80" cy="210" r="24" fill="#0F1629" stroke="#8B9DC3" strokeWidth="1.5">
-                  <animate attributeName="opacity" values="0.7;1;0.7" dur="4.5s" repeatCount="indefinite" />
-                </circle>
-                <text x="80" y="214" textAnchor="middle" fill="#8B9DC3" fontSize="10" fontWeight="600" fontFamily="Inter, sans-serif">Peer</text>
-
-                {/* Connection lines — animated dashes */}
-                {/* Active connection (green) */}
-                <line x1="250" y1="214" x2="250" y2="104" stroke="#00D09C" strokeWidth="2" strokeDasharray="6 4" opacity="0.8">
-                  <animate attributeName="strokeDashoffset" values="0;-20" dur="1.5s" repeatCount="indefinite" />
-                </line>
-
-                {/* Active connection 2 */}
-                <line x1="276" y1="232" x2="380" y2="157" stroke="#00D09C" strokeWidth="2" strokeDasharray="6 4" opacity="0.6">
-                  <animate attributeName="strokeDashoffset" values="0;-20" dur="2s" repeatCount="indefinite" />
-                </line>
-
-                {/* Searching connections (dim) */}
-                <line x1="278" y1="262" x2="398" y2="293" stroke="#1C2A3A" strokeWidth="1.5" strokeDasharray="4 6" opacity="0.5">
-                  <animate attributeName="opacity" values="0.2;0.6;0.2" dur="3s" repeatCount="indefinite" />
-                </line>
-                <line x1="264" y1="282" x2="290" y2="400" stroke="#1C2A3A" strokeWidth="1.5" strokeDasharray="4 6" opacity="0.4">
-                  <animate attributeName="opacity" values="0.3;0.6;0.3" dur="2.5s" repeatCount="indefinite" />
-                </line>
-                <line x1="228" y1="272" x2="132" y2="364" stroke="#1C2A3A" strokeWidth="1.5" strokeDasharray="4 6" opacity="0.3">
-                  <animate attributeName="opacity" values="0.2;0.5;0.2" dur="4s" repeatCount="indefinite" />
-                </line>
-                <line x1="218" y1="242" x2="102" y2="216" stroke="#1C2A3A" strokeWidth="1.5" strokeDasharray="4 6" opacity="0.4">
-                  <animate attributeName="opacity" values="0.3;0.7;0.3" dur="3.5s" repeatCount="indefinite" />
-                </line>
-
-                {/* Data packet dots traveling on active lines */}
-                <circle r="3" fill="#00D09C">
-                  <animateMotion dur="2s" repeatCount="indefinite" path="M250,214 L250,104" />
-                </circle>
-                <circle r="3" fill="#00D09C" opacity="0.7">
-                  <animateMotion dur="2.5s" repeatCount="indefinite" path="M276,232 L380,157" />
-                </circle>
-
-                {/* Pulse rings on center */}
-                <circle cx="250" cy="250" r="36" fill="none" stroke="#00D09C" strokeWidth="1" opacity="0">
-                  <animate attributeName="r" values="36;70" dur="2.5s" repeatCount="indefinite" />
-                  <animate attributeName="opacity" values="0.5;0" dur="2.5s" repeatCount="indefinite" />
-                </circle>
-                <circle cx="250" cy="250" r="36" fill="none" stroke="#00D09C" strokeWidth="1" opacity="0">
-                  <animate attributeName="r" values="36;70" dur="2.5s" begin="1.25s" repeatCount="indefinite" />
-                  <animate attributeName="opacity" values="0.3;0" dur="2.5s" begin="1.25s" repeatCount="indefinite" />
-                </circle>
-
-                {/* Labels */}
-                <text x="250" y="290" textAnchor="middle" fill="#4A5F80" fontSize="9" fontFamily="Inter, sans-serif">MATCHING...</text>
-
-                {/* "Connected" badge near active line */}
-                <rect x="218" y="140" width="65" height="20" rx="10" fill="#00D09C" opacity="0.15" />
-                <text x="250" y="153" textAnchor="middle" fill="#00D09C" fontSize="8" fontWeight="700" fontFamily="Inter, sans-serif">
-                  CONNECTED
-                </text>
+                <path
+                  d="M2 8 Q50 2, 100 8 T200 4"
+                  stroke="#FF6B6B"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                />
               </svg>
+            </span>
+            <br />
+            <span className="text-[#00D09C]">We fixed that.</span>
+          </h1>
 
-              {/* Floating status cards around the SVG */}
-              <div className="absolute top-6 left-0 rounded-xl border border-brand-border bg-brand-card/90 backdrop-blur px-3 py-2 animate-fade-in hidden sm:block">
-                <p className="text-[11px] text-brand-text-muted">Students Online</p>
-                <p className="text-lg font-black text-brand-accent">127</p>
-              </div>
+          <p className="mt-6 text-lg sm:text-xl text-[#555] max-w-2xl mx-auto leading-relaxed">
+            As an IIT Madras BS student, your campus is your screen. No
+            corridors, no canteen hangouts. Find someone who fits your study
+            life — not just the empty chat.
+          </p>
 
-              <div className="absolute bottom-10 right-0 rounded-xl border border-brand-border bg-brand-card/90 backdrop-blur px-3 py-2 animate-fade-in hidden sm:block" style={{ animationDelay: '0.3s' }}>
-                <div className="flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-brand-accent animate-pulse" />
-                  <p className="text-[11px] text-brand-accent font-semibold">Live matching</p>
-                </div>
-              </div>
+          <div className="flex flex-wrap gap-4 mt-10 justify-center">
+            <Link
+              href="/auth/login"
+              className="bb-btn bb-btn-green text-lg px-10 py-4"
+            >
+              Start Connecting
+            </Link>
+            <a
+              href="#how-it-works"
+              className="inline-flex items-center gap-2 px-6 py-4 font-semibold text-lg underline underline-offset-4 decoration-2 hover:decoration-[#00D09C] transition-colors"
+            >
+              See how it works
+            </a>
+          </div>
+        </div>
+      </section>
 
-              <div className="absolute bottom-4 left-8 rounded-xl border border-brand-border bg-brand-card/90 backdrop-blur px-3 py-2 animate-fade-in hidden sm:block" style={{ animationDelay: '0.6s' }}>
-                <p className="text-[11px] text-brand-text-muted">Avg match time</p>
-                <p className="text-sm font-black text-white">~4 sec</p>
+      {/* ══════════ SCROLLING STUDENT AVATARS (BunkBuddies-style arches) ══════════ */}
+      <section className="py-10 overflow-hidden">
+        <div className="flex animate-scroll-x whitespace-nowrap items-end">
+          {Array.from({ length: 14 }).map((_, i) => {
+            const cards = [
+              /* 0 — tall oval (purple) — girl with bun */
+              {
+                bg: '#B794F6',
+                width: 'w-36 sm:w-44',
+                height: 'h-52 sm:h-60',
+                radius: 'rounded-[50%]',
+                svg: (
+                  <svg viewBox="0 0 100 140" className="w-24 sm:w-28 mt-6">
+                    <circle cx="50" cy="35" r="16" fill="none" stroke="#111" strokeWidth="2.5" />
+                    <circle cx="50" cy="20" r="7" fill="#111" />
+                    <path d="M38 35 Q38 24 50 20 Q62 24 62 35" fill="none" stroke="#111" strokeWidth="2" />
+                    <line x1="50" y1="51" x2="50" y2="95" stroke="#111" strokeWidth="2.5" />
+                    <line x1="50" y1="62" x2="32" y2="80" stroke="#111" strokeWidth="2.5" strokeLinecap="round" />
+                    <line x1="50" y1="62" x2="68" y2="80" stroke="#111" strokeWidth="2.5" strokeLinecap="round" />
+                    <line x1="50" y1="95" x2="36" y2="125" stroke="#111" strokeWidth="2.5" strokeLinecap="round" />
+                    <line x1="50" y1="95" x2="64" y2="125" stroke="#111" strokeWidth="2.5" strokeLinecap="round" />
+                    <path d="M40 33 Q42 28 50 26" fill="none" stroke="#111" strokeWidth="1.5" />
+                    <circle cx="44" cy="35" r="1.5" fill="#111" />
+                    <circle cx="56" cy="35" r="1.5" fill="#111" />
+                    <path d="M46 41 Q50 44 54 41" fill="none" stroke="#111" strokeWidth="1.5" />
+                  </svg>
+                ),
+              },
+              /* 1 — double arch (orange) — two friends */
+              {
+                bg: '#FB923C',
+                width: 'w-48 sm:w-56',
+                height: 'h-48 sm:h-56',
+                radius: 'rounded-[50%_50%_50%_50%/60%_60%_40%_40%]',
+                svg: (
+                  <svg viewBox="0 0 140 120" className="w-32 sm:w-40 mt-4">
+                    <circle cx="45" cy="35" r="14" fill="none" stroke="#111" strokeWidth="2.5" />
+                    <circle cx="95" cy="35" r="14" fill="none" stroke="#111" strokeWidth="2.5" />
+                    <path d="M35 30 Q35 22 45 19 Q55 22 55 30" fill="#111" />
+                    <path d="M82 28 Q85 18 95 18 Q105 18 108 28" fill="#111" />
+                    <circle cx="40" cy="35" r="1.5" fill="#111" />
+                    <circle cx="50" cy="35" r="1.5" fill="#111" />
+                    <path d="M42 40 Q45 43 48 40" fill="none" stroke="#111" strokeWidth="1.5" />
+                    <circle cx="90" cy="35" r="1.5" fill="#111" />
+                    <circle cx="100" cy="35" r="1.5" fill="#111" />
+                    <path d="M92 40 Q95 43 98 40" fill="none" stroke="#111" strokeWidth="1.5" />
+                    <line x1="45" y1="49" x2="45" y2="85" stroke="#111" strokeWidth="2.5" />
+                    <line x1="95" y1="49" x2="95" y2="85" stroke="#111" strokeWidth="2.5" />
+                    <line x1="45" y1="60" x2="30" y2="75" stroke="#111" strokeWidth="2" strokeLinecap="round" />
+                    <line x1="45" y1="60" x2="60" y2="72" stroke="#111" strokeWidth="2" strokeLinecap="round" />
+                    <line x1="95" y1="60" x2="80" y2="72" stroke="#111" strokeWidth="2" strokeLinecap="round" />
+                    <line x1="95" y1="60" x2="110" y2="75" stroke="#111" strokeWidth="2" strokeLinecap="round" />
+                    <line x1="45" y1="85" x2="36" y2="110" stroke="#111" strokeWidth="2.5" strokeLinecap="round" />
+                    <line x1="45" y1="85" x2="54" y2="110" stroke="#111" strokeWidth="2.5" strokeLinecap="round" />
+                    <line x1="95" y1="85" x2="86" y2="110" stroke="#111" strokeWidth="2.5" strokeLinecap="round" />
+                    <line x1="95" y1="85" x2="104" y2="110" stroke="#111" strokeWidth="2.5" strokeLinecap="round" />
+                  </svg>
+                ),
+              },
+              /* 2 — squircle (coral) — person with laptop */
+              {
+                bg: '#FF6B6B',
+                width: 'w-40 sm:w-48',
+                height: 'h-48 sm:h-56',
+                radius: 'rounded-[35%]',
+                svg: (
+                  <svg viewBox="0 0 110 130" className="w-28 sm:w-32 mt-4">
+                    <circle cx="55" cy="32" r="15" fill="none" stroke="#111" strokeWidth="2.5" />
+                    <path d="M42 28 Q45 20 55 18 Q65 20 68 28" fill="#111" />
+                    <circle cx="49" cy="32" r="1.5" fill="#111" />
+                    <circle cx="61" cy="32" r="1.5" fill="#111" />
+                    <path d="M51 38 Q55 41 59 38" fill="none" stroke="#111" strokeWidth="1.5" />
+                    <line x1="55" y1="47" x2="55" y2="88" stroke="#111" strokeWidth="2.5" />
+                    <line x1="55" y1="60" x2="35" y2="75" stroke="#111" strokeWidth="2.5" strokeLinecap="round" />
+                    <line x1="55" y1="60" x2="75" y2="75" stroke="#111" strokeWidth="2.5" strokeLinecap="round" />
+                    <rect x="28" y="72" width="25" height="16" rx="2" fill="none" stroke="#111" strokeWidth="2" />
+                    <line x1="28" y1="88" x2="53" y2="88" stroke="#111" strokeWidth="2" />
+                    <line x1="55" y1="88" x2="42" y2="118" stroke="#111" strokeWidth="2.5" strokeLinecap="round" />
+                    <line x1="55" y1="88" x2="68" y2="118" stroke="#111" strokeWidth="2.5" strokeLinecap="round" />
+                  </svg>
+                ),
+              },
+              /* 3 — tall arch/doorway (yellow) — person with glasses */
+              {
+                bg: '#FBBF24',
+                width: 'w-36 sm:w-44',
+                height: 'h-52 sm:h-60',
+                radius: 'rounded-[50%_50%_12%_12%]',
+                svg: (
+                  <svg viewBox="0 0 100 140" className="w-24 sm:w-28 mt-6">
+                    <circle cx="50" cy="35" r="16" fill="none" stroke="#111" strokeWidth="2.5" />
+                    <path d="M36 30 Q40 18 50 16 Q60 18 64 30" fill="#111" />
+                    <circle cx="43" cy="35" r="5" fill="none" stroke="#111" strokeWidth="1.5" />
+                    <circle cx="57" cy="35" r="5" fill="none" stroke="#111" strokeWidth="1.5" />
+                    <line x1="48" y1="35" x2="52" y2="35" stroke="#111" strokeWidth="1.5" />
+                    <circle cx="43" cy="35" r="1.2" fill="#111" />
+                    <circle cx="57" cy="35" r="1.2" fill="#111" />
+                    <path d="M46 43 Q50 46 54 43" fill="none" stroke="#111" strokeWidth="1.5" />
+                    <line x1="50" y1="51" x2="50" y2="95" stroke="#111" strokeWidth="2.5" />
+                    <path d="M40 58 L50 65 L60 58" fill="none" stroke="#111" strokeWidth="2" />
+                    <line x1="50" y1="62" x2="32" y2="80" stroke="#111" strokeWidth="2.5" strokeLinecap="round" />
+                    <line x1="50" y1="62" x2="68" y2="80" stroke="#111" strokeWidth="2.5" strokeLinecap="round" />
+                    <line x1="50" y1="95" x2="36" y2="125" stroke="#111" strokeWidth="2.5" strokeLinecap="round" />
+                    <line x1="50" y1="95" x2="64" y2="125" stroke="#111" strokeWidth="2.5" strokeLinecap="round" />
+                  </svg>
+                ),
+              },
+              /* 4 — oval (purple) — person with phone */
+              {
+                bg: '#B794F6',
+                width: 'w-36 sm:w-44',
+                height: 'h-48 sm:h-56',
+                radius: 'rounded-[50%]',
+                svg: (
+                  <svg viewBox="0 0 100 130" className="w-24 sm:w-28 mt-4">
+                    <circle cx="50" cy="32" r="15" fill="none" stroke="#111" strokeWidth="2.5" />
+                    <path d="M38 28 Q42 20 50 18 Q58 20 62 28" fill="#111" />
+                    <circle cx="44" cy="32" r="1.5" fill="#111" />
+                    <circle cx="56" cy="32" r="1.5" fill="#111" />
+                    <path d="M46 38 Q50 41 54 38" fill="none" stroke="#111" strokeWidth="1.5" />
+                    <line x1="50" y1="47" x2="50" y2="88" stroke="#111" strokeWidth="2.5" />
+                    <line x1="50" y1="60" x2="32" y2="78" stroke="#111" strokeWidth="2.5" strokeLinecap="round" />
+                    <line x1="50" y1="60" x2="70" y2="72" stroke="#111" strokeWidth="2.5" strokeLinecap="round" />
+                    <rect x="65" y="64" width="10" height="18" rx="2" fill="none" stroke="#111" strokeWidth="1.5" />
+                    <line x1="50" y1="88" x2="38" y2="118" stroke="#111" strokeWidth="2.5" strokeLinecap="round" />
+                    <line x1="50" y1="88" x2="62" y2="118" stroke="#111" strokeWidth="2.5" strokeLinecap="round" />
+                  </svg>
+                ),
+              },
+              /* 5 — wide pill (coral) — person waving */
+              {
+                bg: '#FF6B6B',
+                width: 'w-40 sm:w-48',
+                height: 'h-44 sm:h-52',
+                radius: 'rounded-[40%_40%_40%_40%/50%_50%_50%_50%]',
+                svg: (
+                  <svg viewBox="0 0 110 120" className="w-28 sm:w-32 mt-4">
+                    <circle cx="55" cy="30" r="15" fill="none" stroke="#111" strokeWidth="2.5" />
+                    <path d="M43 26 Q48 16 55 15 Q62 16 67 26" fill="#111" />
+                    <circle cx="49" cy="30" r="1.5" fill="#111" />
+                    <circle cx="61" cy="30" r="1.5" fill="#111" />
+                    <path d="M51 36 Q55 39 59 36" fill="none" stroke="#111" strokeWidth="1.5" />
+                    <line x1="55" y1="45" x2="55" y2="82" stroke="#111" strokeWidth="2.5" />
+                    <line x1="55" y1="56" x2="35" y2="72" stroke="#111" strokeWidth="2.5" strokeLinecap="round" />
+                    <line x1="55" y1="56" x2="78" y2="48" stroke="#111" strokeWidth="2.5" strokeLinecap="round" />
+                    <line x1="78" y1="48" x2="82" y2="36" stroke="#111" strokeWidth="2.5" strokeLinecap="round" />
+                    <line x1="55" y1="82" x2="42" y2="108" stroke="#111" strokeWidth="2.5" strokeLinecap="round" />
+                    <line x1="55" y1="82" x2="68" y2="108" stroke="#111" strokeWidth="2.5" strokeLinecap="round" />
+                  </svg>
+                ),
+              },
+              /* 6 — arch (orange) — studious person */
+              {
+                bg: '#FB923C',
+                width: 'w-36 sm:w-44',
+                height: 'h-52 sm:h-60',
+                radius: 'rounded-[50%_50%_15%_15%]',
+                svg: (
+                  <svg viewBox="0 0 100 140" className="w-24 sm:w-28 mt-6">
+                    <circle cx="50" cy="35" r="16" fill="none" stroke="#111" strokeWidth="2.5" />
+                    <path d="M36 32 Q38 20 50 17 Q62 20 64 32" fill="#111" />
+                    <path d="M34 35 L66 35" stroke="#111" strokeWidth="1" />
+                    <circle cx="44" cy="36" r="1.5" fill="#111" />
+                    <circle cx="56" cy="36" r="1.5" fill="#111" />
+                    <path d="M46 42 Q50 45 54 42" fill="none" stroke="#111" strokeWidth="1.5" />
+                    <line x1="50" y1="51" x2="50" y2="95" stroke="#111" strokeWidth="2.5" />
+                    <line x1="50" y1="62" x2="30" y2="78" stroke="#111" strokeWidth="2.5" strokeLinecap="round" />
+                    <line x1="50" y1="62" x2="70" y2="78" stroke="#111" strokeWidth="2.5" strokeLinecap="round" />
+                    <rect x="25" y="76" width="20" height="14" rx="1.5" fill="none" stroke="#111" strokeWidth="1.5" />
+                    <line x1="29" y1="80" x2="41" y2="80" stroke="#111" strokeWidth="1" />
+                    <line x1="29" y1="83" x2="38" y2="83" stroke="#111" strokeWidth="1" />
+                    <line x1="29" y1="86" x2="41" y2="86" stroke="#111" strokeWidth="1" />
+                    <line x1="50" y1="95" x2="36" y2="125" stroke="#111" strokeWidth="2.5" strokeLinecap="round" />
+                    <line x1="50" y1="95" x2="64" y2="125" stroke="#111" strokeWidth="2.5" strokeLinecap="round" />
+                  </svg>
+                ),
+              },
+            ];
+            const card = cards[i % 7];
+            return (
+              <div
+                key={i}
+                className={`flex-shrink-0 mx-3 ${card.width} ${card.height} ${card.radius} border-[3px] border-[#111] flex items-center justify-center overflow-hidden`}
+                style={{ backgroundColor: card.bg, boxShadow: '3px 3px 0px #111' }}
+              >
+                {card.svg}
               </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ══════════ CURVED DIVIDER ══════════ */}
+      <div className="relative h-16 sm:h-24 -mb-1">
+        <svg
+          viewBox="0 0 1440 80"
+          fill="none"
+          preserveAspectRatio="none"
+          className="absolute inset-0 w-full h-full"
+        >
+          <path
+            d="M0,40 Q360,80 720,40 T1440,40 L1440,80 L0,80 Z"
+            fill="#FF6B6B"
+          />
+        </svg>
+      </div>
+      <div className="h-6 bg-[#FF6B6B]" />
+
+      {/* ══════════ HOW IT WORKS ══════════ */}
+      <section
+        id="how-it-works"
+        className="py-20 px-4 sm:px-6 lg:px-8 bg-[#FDEBD3]"
+      >
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+            <div className="lg:sticky lg:top-32">
+              <h2 className="text-5xl sm:text-6xl font-black leading-tight">
+                How it
+                <br />
+                works ?
+              </h2>
             </div>
-          </div>
-        </div>
-      </section>
 
-      {/* Stats Row */}
-      <section className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-20">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 max-w-4xl mx-auto">
-          <div className="rounded-2xl border-2 border-brand-border bg-brand-card p-6 text-center hover:border-brand-accent/30 transition-colors">
-            <p className="text-4xl sm:text-5xl font-black text-white mb-1">500+</p>
-            <p className="text-sm font-medium text-brand-text-secondary">Verified Students</p>
-          </div>
-          <div className="rounded-2xl bg-brand-accent p-6 text-center">
-            <p className="text-4xl sm:text-5xl font-black text-white mb-1">10K+</p>
-            <p className="text-sm font-medium text-white/80">Study Sessions</p>
-          </div>
-          <div className="rounded-2xl border-2 border-brand-border bg-brand-card p-6 text-center hover:border-brand-accent/30 transition-colors">
-            <p className="text-4xl sm:text-5xl font-black text-white mb-1">50+</p>
-            <p className="text-sm font-medium text-brand-text-secondary">Course Topics</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Feature Bento — Two cards side by side like website */}
-      <section className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-20">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          {/* Green accent card */}
-          <div className="accent-card rounded-3xl p-8 sm:p-10">
-            <h2 className="text-3xl sm:text-4xl font-black text-white mb-4 leading-tight">
-              Experience the Powerful<br />and Best Ecosystem
-            </h2>
-            <p className="text-white/80 text-base mb-8 max-w-md">
-              See how our platform simplifies anonymous study connections and
-              helps you ace your exams with ease.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              {['Text Chat', 'Video Connect', 'Topic Matching', 'Safe & Private'].map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-full border-2 border-white/30 bg-white px-4 py-2 text-sm font-semibold text-brand-accent-dim"
+            <div className="space-y-6">
+              {[
+                {
+                  bg: 'bg-[#00D09C]',
+                  title: 'Verify Your Identity',
+                  desc: 'Login with your IIT Madras BS email. OTP verified. Takes 2 minutes. No drama.',
+                },
+                {
+                  bg: 'bg-[#B794F6]',
+                  title: 'Get Matched Instantly',
+                  desc: 'Our matching engine pairs you with another verified student. See someone who matches your study vibe? Start chatting.',
+                },
+                {
+                  bg: 'bg-[#FF6B6B]',
+                  title: 'Study Together',
+                  desc: 'Chat via text or video. Discuss assignments, prep for exams, share notes. The real study partner experience.',
+                },
+              ].map((step, i) => (
+                <div
+                  key={i}
+                  className={`${step.bg} rounded-2xl border-[3px] border-[#111] shadow-[5px_5px_0px_#111] p-8`}
                 >
-                  {tag}
-                </span>
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="bg-white/30 rounded-full w-10 h-10 flex items-center justify-center text-lg font-black">
+                      {i + 1}
+                    </span>
+                    <h3 className="text-2xl font-black">{step.title}</h3>
+                  </div>
+                  <p className="text-[#111]/80 text-base leading-relaxed">
+                    {step.desc}
+                  </p>
+                </div>
               ))}
             </div>
           </div>
-
-          {/* Dark grid card */}
-          <div className="dark-grid-card rounded-3xl p-8 sm:p-10 flex flex-col justify-center">
-            <h2 className="text-3xl sm:text-4xl font-black text-white mb-4 leading-tight">
-              Personally connecting<br />India&apos;s next top engineers
-            </h2>
-            <p className="text-brand-text-secondary text-base max-w-md">
-              Taking you from basics to advanced through peer learning,
-              collaborative study sessions, and real-world problem solving.
-            </p>
-          </div>
         </div>
       </section>
 
-      {/* How It Works */}
-      <section className="relative border-t border-brand-border">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-black mb-4 text-white">
-              How <span className="gradient-text">Study Connect</span> Works
-            </h2>
-            <p className="text-brand-text-secondary max-w-xl mx-auto">
-              Safe, verified, and anonymous. Built for focused learning.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {[
-              {
-                step: '01',
-                icon: GraduationCap,
-                title: 'Verify Identity',
-                desc: 'Login with your IIT Madras BS email. OTP verified.',
-              },
-              {
-                step: '02',
-                icon: Shield,
-                title: 'Accept Rules',
-                desc: 'Agree to community guidelines & privacy consent.',
-              },
-              {
-                step: '03',
-                icon: Users,
-                title: 'Get Matched',
-                desc: 'Our engine pairs you with another verified student.',
-              },
-              {
-                step: '04',
-                icon: MessageSquare,
-                title: 'Study Together',
-                desc: 'Chat via text or video. Discuss, learn, grow.',
-              },
-            ].map((item) => (
-              <div
-                key={item.step}
-                className="rounded-2xl border-2 border-brand-border bg-brand-card p-6 hover:border-brand-accent/40 transition-all group"
+      {/* ══════════ STATS ══════════ */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-5">
+          {[
+            { value: '500+', label: 'Verified Students', bg: 'bg-white' },
+            {
+              value: '10K+',
+              label: 'Study Sessions',
+              bg: 'bg-[#00D09C]',
+              light: true,
+            },
+            { value: '50+', label: 'Course Topics', bg: 'bg-white' },
+          ].map((stat, i) => (
+            <div
+              key={i}
+              className={`${stat.bg} rounded-2xl border-[3px] border-[#111] shadow-[4px_4px_0px_#111] p-8 text-center`}
+            >
+              <p
+                className={`text-5xl font-black ${stat.light ? 'text-white' : ''}`}
               >
-                <div className="text-xs font-mono text-brand-accent mb-4 font-bold">
-                  STEP {item.step}
-                </div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-accent/10 mb-4 group-hover:bg-brand-accent/20 transition-colors">
-                  <item.icon className="h-6 w-6 text-brand-accent" />
-                </div>
-                <h3 className="text-lg font-bold text-white mb-2">{item.title}</h3>
-                <p className="text-sm text-brand-text-muted leading-relaxed">
-                  {item.desc}
-                </p>
-              </div>
-            ))}
-          </div>
+                {stat.value}
+              </p>
+              <p
+                className={`text-sm font-semibold mt-1 ${stat.light ? 'text-white/80' : 'text-[#555]'}`}
+              >
+                {stat.label}
+              </p>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* Features */}
-      <section id="features" className="relative border-t border-brand-border">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20">
+      {/* ══════════ FEATURES ══════════ */}
+      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-black mb-4 text-white">
-              Not Just Random Chat. <span className="gradient-text">Smart Study Connect.</span>
+            <h2 className="text-4xl sm:text-5xl font-black mb-4">
+              Not Just Random Chat.
+              <br />
+              <span className="text-[#00D09C]">Smart Study Connect.</span>
             </h2>
-            <p className="text-brand-text-secondary max-w-xl mx-auto">
-              Unlike Omegle, we built this for education &mdash; with safety as the core.
+            <p className="text-[#555] text-lg max-w-xl mx-auto">
+              Unlike Omegle, we built this for education — with safety as the
+              core.
             </p>
           </div>
 
@@ -355,68 +386,75 @@ export default function HomePage() {
                 title: 'Topic-Based Matching',
                 desc: 'Match with students studying the same subject, assignment, or exam.',
                 badge: 'Pro',
+                color: 'bg-[#00D09C]',
               },
               {
                 icon: Video,
                 title: 'Secure Video Chat',
                 desc: 'WebRTC video with background blur. No recording allowed.',
                 badge: 'Pro',
+                color: 'bg-[#B794F6]',
               },
               {
                 icon: Shield,
                 title: 'AI Moderation',
                 desc: 'Real-time toxicity detection and automatic content filtering.',
                 badge: 'Built-in',
+                color: 'bg-[#FF6B6B]',
               },
               {
                 icon: Lock,
                 title: 'Zero Data Storage',
                 desc: 'Chat content is never stored. Only session metadata for safety.',
                 badge: 'Privacy',
+                color: 'bg-[#FB923C]',
               },
               {
                 icon: Users,
                 title: 'Verified Students Only',
                 desc: 'Email OTP verification ensures only real IIT Madras BS students.',
                 badge: 'Safety',
+                color: 'bg-[#00D09C]',
               },
               {
                 icon: Sparkles,
                 title: 'Smart Queue',
                 desc: 'Priority matching for paid users. Course & level filters.',
                 badge: 'Premium',
+                color: 'bg-[#B794F6]',
               },
-            ].map((feature) => (
+            ].map((f) => (
               <div
-                key={feature.title}
-                className="rounded-2xl border-2 border-brand-border bg-brand-card p-6 hover:border-brand-accent/40 transition-all group"
+                key={f.title}
+                className="bg-white rounded-2xl border-[3px] border-[#111] shadow-[4px_4px_0px_#111] p-6 hover:shadow-[2px_2px_0px_#111] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
               >
                 <div className="flex items-center justify-between mb-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-accent/10 group-hover:bg-brand-accent/20 transition-colors">
-                    <feature.icon className="h-5 w-5 text-brand-accent" />
+                  <div
+                    className={`${f.color} h-12 w-12 rounded-xl border-[2px] border-[#111] flex items-center justify-center`}
+                  >
+                    <f.icon className="h-6 w-6 text-white" />
                   </div>
-                  <span className="rounded-full border border-brand-accent/30 bg-brand-accent/10 px-3 py-0.5 text-xs font-semibold text-brand-accent">
-                    {feature.badge}
+                  <span className="rounded-full border-[2px] border-[#111] bg-[#FDEBD3] px-3 py-0.5 text-xs font-bold">
+                    {f.badge}
                   </span>
                 </div>
-                <h3 className="text-lg font-bold text-white mb-2">{feature.title}</h3>
-                <p className="text-sm text-brand-text-muted leading-relaxed">
-                  {feature.desc}
-                </p>
+                <h3 className="text-lg font-black mb-2">{f.title}</h3>
+                <p className="text-sm text-[#555] leading-relaxed">{f.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Pricing Preview */}
-      <section className="relative border-t border-brand-border">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20">
+      {/* ══════════ PRICING ══════════ */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-black mb-4 text-white">
-              Simple, <span className="gradient-text">Student-Friendly</span> Pricing
+            <h2 className="text-4xl sm:text-5xl font-black mb-4">
+              Simple,{' '}
+              <span className="text-[#00D09C]">Student-Friendly</span> Pricing
             </h2>
-            <p className="text-brand-text-secondary">
+            <p className="text-[#555] text-lg">
               Start free. Upgrade when you&apos;re ready.
             </p>
           </div>
@@ -425,25 +463,33 @@ export default function HomePage() {
             {PLANS.map((plan) => (
               <div
                 key={plan.id}
-                className={`rounded-2xl border-2 p-6 transition-all ${
+                className={`rounded-2xl border-[3px] border-[#111] p-6 transition-all ${
                   plan.highlighted
-                    ? 'border-brand-accent bg-brand-accent/5 ring-1 ring-brand-accent/20 scale-[1.02]'
-                    : 'border-brand-border bg-brand-card hover:border-brand-accent/30'
+                    ? 'bg-[#00D09C] shadow-[6px_6px_0px_#111] scale-[1.02]'
+                    : 'bg-white shadow-[4px_4px_0px_#111]'
                 }`}
               >
                 {plan.highlighted && (
-                  <div className="flex items-center gap-1 text-brand-accent text-xs font-bold mb-3">
-                    <Star className="h-3.5 w-3.5 fill-brand-accent" />
+                  <div className="flex items-center gap-1 text-[#111] text-xs font-black mb-3 bg-white/30 rounded-full px-3 py-1 w-fit">
+                    <Star className="h-3.5 w-3.5" />
                     MOST POPULAR
                   </div>
                 )}
-                <h3 className="text-xl font-black text-white mb-1">{plan.name}</h3>
+                <h3
+                  className={`text-xl font-black mb-1 ${plan.highlighted ? 'text-white' : ''}`}
+                >
+                  {plan.name}
+                </h3>
                 <div className="flex items-baseline gap-1 mb-4">
-                  <span className="text-3xl font-black text-white">
+                  <span
+                    className={`text-3xl font-black ${plan.highlighted ? 'text-white' : ''}`}
+                  >
                     {formatINR(plan.price)}
                   </span>
                   {plan.price > 0 && (
-                    <span className="text-brand-text-muted text-sm">
+                    <span
+                      className={`text-sm ${plan.highlighted ? 'text-white/70' : 'text-[#555]'}`}
+                    >
                       /{plan.period}
                     </span>
                   )}
@@ -452,19 +498,21 @@ export default function HomePage() {
                   {plan.features.map((f) => (
                     <li
                       key={f}
-                      className="flex items-start gap-2 text-sm text-brand-text-secondary"
+                      className={`flex items-start gap-2 text-sm ${plan.highlighted ? 'text-white/90' : 'text-[#555]'}`}
                     >
-                      <CheckCircle2 className="h-4 w-4 text-brand-accent mt-0.5 flex-shrink-0" />
+                      <CheckCircle2
+                        className={`h-4 w-4 mt-0.5 flex-shrink-0 ${plan.highlighted ? 'text-white' : 'text-[#00D09C]'}`}
+                      />
                       {f}
                     </li>
                   ))}
                 </ul>
                 <Link
                   href="/auth/login"
-                  className={`block text-center rounded-full py-2.5 text-sm font-bold transition-colors ${
+                  className={`block text-center rounded-xl py-2.5 text-sm font-bold border-[2px] border-[#111] transition-all ${
                     plan.highlighted
-                      ? 'bg-brand-accent text-white hover:bg-brand-accent-hover'
-                      : 'border-2 border-brand-border text-brand-text-secondary hover:text-white hover:border-brand-accent/50'
+                      ? 'bg-white text-[#111] shadow-[3px_3px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[2px] hover:translate-y-[2px]'
+                      : 'bg-[#FDEBD3] shadow-[3px_3px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[2px] hover:translate-y-[2px]'
                   }`}
                 >
                   {plan.price === 0 ? 'Get Started Free' : 'Choose Plan'}
@@ -475,19 +523,87 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Compliance Banner */}
-      <section className="relative border-t border-brand-border">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
-          <div className="rounded-3xl border-2 border-brand-border dark-grid-card p-8 sm:p-12">
+      {/* ══════════ CTA GREEN BAR ══════════ */}
+      <section className="mx-4 sm:mx-6 lg:mx-8 mb-12">
+        <div className="max-w-7xl mx-auto bg-[#00D09C] rounded-2xl border-[3px] border-[#111] shadow-[6px_6px_0px_#111] p-8 sm:p-12 flex flex-col sm:flex-row items-center justify-between gap-6">
+          <h2 className="text-3xl sm:text-4xl font-black text-white">
+            Let&apos;s connect you with
+            <br className="hidden sm:block" /> your study partners
+          </h2>
+          <Link
+            href="/auth/login"
+            className="flex-shrink-0 inline-flex items-center gap-2 px-8 py-4 bg-white text-[#111] text-lg font-bold rounded-xl border-[3px] border-[#111] shadow-[4px_4px_0px_#111] hover:shadow-[2px_2px_0px_#111] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+          >
+            Start Connecting →
+          </Link>
+        </div>
+      </section>
+
+      {/* ══════════ FAQ ══════════ */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-[#FB923C] rounded-2xl border-[3px] border-[#111] shadow-[6px_6px_0px_#111] p-8 sm:p-12">
+            <h2 className="text-3xl sm:text-4xl font-black mb-8">
+              Frequently Asked Questions
+            </h2>
+            <div className="space-y-5">
+              {[
+                {
+                  q: 'Is my identity really anonymous?',
+                  a: 'Yes. Your real name and email are never shown to other students. You get a random alias.',
+                },
+                {
+                  q: 'Who can use this platform?',
+                  a: 'Only verified IIT Madras BS students with a valid university email.',
+                },
+                {
+                  q: 'Is video chat safe?',
+                  a: 'Yes. WebRTC peer-to-peer encryption. No content is recorded or stored on our servers.',
+                },
+                {
+                  q: 'Can I report someone?',
+                  a: 'Absolutely. One-click reporting with our AI moderation system. Violations = permanent ban.',
+                },
+                {
+                  q: 'Is this like Omegle?',
+                  a: 'Built for education, not random chat. Verified users, topic matching, and Indian compliance built-in.',
+                },
+                {
+                  q: 'What about my data privacy?',
+                  a: 'Fully compliant with DPDP Act 2023, IT Act 2000, and IT Rules 2021. Your data, your control.',
+                },
+              ].map((item, i) => (
+                <div key={i}>
+                  <p className="font-black text-lg flex items-start gap-2">
+                    <span className="bg-[#111] text-[#FB923C] rounded-full w-7 h-7 flex items-center justify-center text-sm flex-shrink-0 mt-0.5">
+                      {i + 1}
+                    </span>
+                    <span>{item.q}</span>
+                  </p>
+                  <p className="ml-9 mt-1 text-[#111]/80 leading-relaxed">
+                    {item.a}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════ COMPLIANCE ══════════ */}
+      <section className="py-12 px-4 sm:px-6 lg:px-8 mb-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white rounded-2xl border-[3px] border-[#111] shadow-[5px_5px_0px_#111] p-8 sm:p-12">
             <div className="flex flex-col lg:flex-row items-center gap-8">
               <div className="flex-1">
-                <h2 className="text-2xl sm:text-3xl font-black text-white mb-4">
-                  Built for <span className="gradient-text">Indian Compliance</span>
+                <h2 className="text-3xl font-black mb-4">
+                  Built for{' '}
+                  <span className="text-[#00D09C]">Indian Compliance</span>
                 </h2>
-                <p className="text-brand-text-secondary leading-relaxed mb-6">
+                <p className="text-[#555] leading-relaxed mb-6">
                   Unlike platforms that failed in India, GenZ IITian Connect is
-                  designed from the ground up to comply with Indian data protection
-                  and intermediary guidelines.
+                  designed from the ground up to comply with Indian data
+                  protection and intermediary guidelines.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {[
@@ -500,54 +616,26 @@ export default function HomePage() {
                   ].map((item) => (
                     <div
                       key={item}
-                      className="flex items-center gap-2 text-sm text-brand-text-secondary"
+                      className="flex items-center gap-2 text-sm"
                     >
-                      <CheckCircle2 className="h-4 w-4 text-brand-accent flex-shrink-0" />
+                      <CheckCircle2 className="h-4 w-4 text-[#00D09C] flex-shrink-0" />
                       {item}
                     </div>
                   ))}
                 </div>
               </div>
-              <div className="flex flex-col items-center gap-4">
-                <div className="rounded-2xl border-2 border-brand-accent/30 bg-brand-accent/10 p-8 text-center">
-                  <Shield className="h-16 w-16 text-brand-accent mx-auto mb-4" />
-                  <p className="text-lg font-black gradient-text">
+              <div className="flex flex-col items-center">
+                <div className="rounded-2xl border-[3px] border-[#111] bg-[#00D09C]/10 p-8 text-center shadow-[4px_4px_0px_#111]">
+                  <Shield className="h-16 w-16 text-[#00D09C] mx-auto mb-4" />
+                  <p className="text-xl font-black text-[#00D09C]">
                     Privacy First
                   </p>
-                  <p className="text-sm text-brand-text-muted mt-1">
+                  <p className="text-sm text-[#555] mt-1">
                     Your data, your control
                   </p>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="relative border-t border-brand-border">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20 text-center">
-          <h2 className="text-3xl sm:text-4xl font-black text-white mb-4">
-            Ready to <span className="gradient-text">Connect &amp; Learn?</span>
-          </h2>
-          <p className="text-brand-text-secondary max-w-xl mx-auto mb-8">
-            Join verified IIT Madras BS students. Study smarter, connect safely.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              href="/auth/login"
-              className="glow-btn inline-flex items-center gap-2 rounded-full bg-brand-accent px-10 py-4 text-lg font-black text-white hover:bg-brand-accent-hover transition-all"
-            >
-              Get Started for Free
-              <ArrowRight className="h-5 w-5" />
-            </Link>
-            <Link
-              href="https://youtube.com"
-              target="_blank"
-              className="glow-btn-red inline-flex items-center gap-2 rounded-full bg-brand-red px-8 py-4 text-base font-bold text-white hover:bg-brand-red-hover transition-all"
-            >
-              YouTube
-            </Link>
           </div>
         </div>
       </section>
