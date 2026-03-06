@@ -31,8 +31,12 @@ export default function DashboardPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!isAuthenticated) router.push('/auth/login');
-  }, [isAuthenticated, router]);
+    if (!isAuthenticated) {
+      router.push('/auth/login');
+    } else if (user && !user.profileComplete) {
+      router.push('/auth/complete-profile');
+    }
+  }, [isAuthenticated, user, router]);
 
   if (!isAuthenticated || !user) return null;
 
@@ -188,11 +192,18 @@ export default function DashboardPage() {
             {/* Profile Card */}
             <div className="bb-card bg-white p-6">
               <div className="text-center mb-4">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#00D09C] border-[3px] border-[#111] mb-3">
-                  <User className="h-8 w-8 text-white" />
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#00D09C] border-[3px] border-[#111] mb-3 overflow-hidden">
+                  {user.avatarUrl ? (
+                    <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" />
+                  ) : (
+                    <User className="h-8 w-8 text-white" />
+                  )}
                 </div>
                 <p className="font-black text-[#111]">{user.displayName || 'Student'}</p>
                 <p className="text-sm text-[#888] truncate">{user.email}</p>
+                {user.collegeName && (
+                  <p className="text-xs text-[#00D09C] font-semibold mt-1">{user.collegeName}</p>
+                )}
               </div>
 
               <div className="space-y-2">

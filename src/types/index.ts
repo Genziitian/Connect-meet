@@ -30,6 +30,9 @@ export interface User {
   email: string;
   displayName?: string;
   avatarUrl?: string;
+  collegeName?: string;
+  gender?: 'male' | 'female' | 'other' | 'prefer-not-to-say';
+  profileComplete: boolean;
   planType: PlanType;
   isVerified: boolean;
   isBanned: boolean;
@@ -104,4 +107,5 @@ export interface Plan {
   topicFilters: boolean;
   priorityMatching: boolean;
   highlighted?: boolean;
+  comingSoon?: boolean;
 }

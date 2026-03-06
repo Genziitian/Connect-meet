@@ -65,7 +65,11 @@ export default function Navbar() {
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl border-[3px] border-[#111] bg-white shadow-[3px_3px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[2px] hover:translate-y-[2px] transition-all text-sm font-bold"
                 >
-                  <User className="h-4 w-4" />
+                  {user?.avatarUrl ? (
+                    <img src={user.avatarUrl} alt="" className="h-5 w-5 rounded-full border border-[#111]" referrerPolicy="no-referrer" />
+                  ) : (
+                    <User className="h-4 w-4" />
+                  )}
                   <span className="hidden sm:block max-w-[120px] truncate">
                     {user?.displayName || user?.email}
                   </span>

@@ -474,12 +474,14 @@ export default function ConnectPage() {
     };
   }, [user?.id, startCamera, createPeerConnection]);
 
-  // Redirect if not authenticated
+  // Redirect if not authenticated or profile incomplete
   useEffect(() => {
     if (!isAuthenticated) {
       router.push('/auth/login');
+    } else if (user && !user.profileComplete) {
+      router.push('/auth/complete-profile');
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, user, router]);
 
   // Queue timer
   useEffect(() => {
