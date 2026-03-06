@@ -7,7 +7,7 @@ const razorpay = new Razorpay({
 });
 
 const PLAN_PRICES: Record<string, number> = {
-  pro: 14900,     // ₹149 in paise
+  pro: 100,       // ₹1 in paise (testing)
   premium: 29900, // ₹299 in paise
 };
 
@@ -24,10 +24,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
     }
 
+    const receipt = `${userId.slice(0, 20)}_${planId}_${Date.now().toString(36)}`.slice(0, 40);
     const order = await razorpay.orders.create({
       amount,
       currency: 'INR',
-      receipt: `${userId}_${planId}_${Date.now()}`,
+      receipt,
       notes: { planId, userId },
     });
 

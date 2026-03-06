@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import admin from 'firebase-admin';
+import path from 'path';
 
-// Initialize Firebase Admin (server-side)
+// Initialize Firebase Admin (server-side) using service account JSON
 if (admin.apps.length === 0) {
+  const serviceAccount = require(path.join(process.cwd(), 'config', 'firebase-admin.json'));
   admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    }),
+    credential: admin.credential.cert(serviceAccount),
   });
 }
 
