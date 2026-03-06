@@ -46,17 +46,18 @@ export async function POST(req: NextRequest) {
 
     // Payment verified — update user plan in Firestore
     const maxMatches = PLAN_LIMITS[planId] ?? 20;
-    await adminDb.doc(`users/${userId}`).update({
+    await adminDb.doc(`users/${userId}`).set({
       planType: planId,
       maxMatchesPerDay: maxMatches,
       lastPaymentId: razorpay_payment_id,
       lastPaymentAt: new Date(),
       subscriptionStatus: 'active',
-    });
+    }, { merge: true });
 
     return NextResponse.json({ success: true, planId });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Payment verification error:', error);
-    return NextResponse.json({ error: 'Payment verification failed' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Payment verification failed';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
