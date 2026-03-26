@@ -145,7 +145,7 @@ export default function PrivacyPolicyPage() {
           <div className="rounded-xl border-[2px] border-[#111] bg-[#FDEBD3] p-4">
             <p className="text-sm font-bold text-[#111]">Grievance Officer (as required under IT Rules 2021)</p>
             <p className="text-sm text-[#555] mt-1">Name: Grievance Officer — GenZ IITian Connect</p>
-            <p className="text-sm text-[#555]">Email: grievance@genziitian.com</p>
+            <p className="text-sm text-[#555]">Email: help@genziitian.in</p>
             <p className="text-sm text-[#555]">Response time: Within 48 hours of receipt</p>
             <p className="text-sm text-[#555]">Resolution: Within 15 days as per IT Rules 2021</p>
           </div>
@@ -163,8 +163,8 @@ export default function PrivacyPolicyPage() {
         <LegalSection title="12. Contact Us">
           <p>For any privacy-related queries or to exercise your data rights:</p>
           <ul>
-            <li>Email: privacy@genziitian.com</li>
-            <li>Grievance Officer: grievance@genziitian.com</li>
+            <li>Email: help@genziitian.in</li>
+            <li>Grievance Officer: help@genziitian.in</li>
           </ul>
         </LegalSection>
       </div>

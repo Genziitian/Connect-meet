@@ -90,7 +90,7 @@ export default function TermsPage() {
           {
             title: '13. Contact',
             content:
-              'For any queries regarding these terms: Email: legal@genziitian.com. Grievance Officer: grievance@genziitian.com (response within 48 hours).',
+              'For any queries regarding these terms: Email: help@genziitian.in. Grievance Officer: help@genziitian.in (response within 48 hours).',
           },
         ].map((section) => (
           <div

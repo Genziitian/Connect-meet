@@ -87,8 +87,8 @@ export default function GuidelinesPage() {
           <p><strong className="text-[#111]">After Chat:</strong> Report via the end-of-chat feedback screen.</p>
           <p>
             <strong className="text-[#111]">Email:</strong> Send detailed reports to{' '}
-            <a href="mailto:grievance@genziitian.com" className="text-[#00D09C] underline font-semibold">
-              grievance@genziitian.com
+            <a href="mailto:help@genziitian.in" className="text-[#00D09C] underline font-semibold">
+              help@genziitian.in
             </a>
           </p>
           <p className="mt-3 text-xs text-[#888]">

@@ -52,7 +52,6 @@ export default function Footer() {
               </h4>
               <ul className="space-y-2.5">
                 <FooterLink href="/connect">Study Connect</FooterLink>
-                <FooterLink href="/plans">Pricing</FooterLink>
                 <FooterLink href="/dashboard">Dashboard</FooterLink>
                 <FooterLink href="/auth/login">Login</FooterLink>
               </ul>

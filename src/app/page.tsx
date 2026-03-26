@@ -446,79 +446,33 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ══════════ PRICING ══════════ */}
+      {/* ══════════ FREE FOR NOW ══════════ */}
       <section className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl sm:text-5xl font-black mb-4">
-              Simple,{' '}
-              <span className="text-[#00D09C]">Student-Friendly</span> Pricing
+              <span className="text-[#00D09C]">Free</span> For Everyone
             </h2>
             <p className="text-[#555] text-lg">
-              Start free. Upgrade when you&apos;re ready.
+              For now, every feature is available to all users at no cost.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-5xl mx-auto">
-            {PLANS.map((plan) => (
-              <div
-                key={plan.id}
-                className={`rounded-2xl border-[3px] border-[#111] p-6 transition-all ${
-                  plan.highlighted
-                    ? 'bg-[#00D09C] shadow-[6px_6px_0px_#111] scale-[1.02]'
-                    : 'bg-white shadow-[4px_4px_0px_#111]'
-                }`}
+          <div className="max-w-3xl mx-auto">
+            <div className="rounded-2xl border-[3px] border-[#111] bg-white shadow-[4px_4px_0px_#111] p-8 text-center">
+              <p className="text-lg text-[#111] font-semibold">
+                Pricing is currently disabled.
+              </p>
+              <p className="text-[#555] mt-2">
+                Enjoy the full Gen-Z IITian Connect experience free for everyone for now.
+              </p>
+              <Link
+                href="/auth/login"
+                className="inline-block mt-6 rounded-xl py-2.5 px-6 text-sm font-bold border-[2px] border-[#111] bg-[#FDEBD3] shadow-[3px_3px_0px_#111] transition-all hover:shadow-[1px_1px_0px_#111] hover:translate-x-[2px] hover:translate-y-[2px]"
               >
-                {plan.highlighted && (
-                  <div className="flex items-center gap-1 text-[#111] text-xs font-black mb-3 bg-white/30 rounded-full px-3 py-1 w-fit">
-                    <Star className="h-3.5 w-3.5" />
-                    MOST POPULAR
-                  </div>
-                )}
-                <h3
-                  className={`text-xl font-black mb-1 ${plan.highlighted ? 'text-white' : ''}`}
-                >
-                  {plan.name}
-                </h3>
-                <div className="flex items-baseline gap-1 mb-4">
-                  <span
-                    className={`text-3xl font-black ${plan.highlighted ? 'text-white' : ''}`}
-                  >
-                    {formatINR(plan.price)}
-                  </span>
-                  {plan.price > 0 && (
-                    <span
-                      className={`text-sm ${plan.highlighted ? 'text-white/70' : 'text-[#555]'}`}
-                    >
-                      /{plan.period}
-                    </span>
-                  )}
-                </div>
-                <ul className="space-y-2.5 mb-6">
-                  {plan.features.map((f) => (
-                    <li
-                      key={f}
-                      className={`flex items-start gap-2 text-sm ${plan.highlighted ? 'text-white/90' : 'text-[#555]'}`}
-                    >
-                      <CheckCircle2
-                        className={`h-4 w-4 mt-0.5 flex-shrink-0 ${plan.highlighted ? 'text-white' : 'text-[#00D09C]'}`}
-                      />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  href="/auth/login"
-                  className={`block text-center rounded-xl py-2.5 text-sm font-bold border-[2px] border-[#111] transition-all ${
-                    plan.highlighted
-                      ? 'bg-white text-[#111] shadow-[3px_3px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[2px] hover:translate-y-[2px]'
-                      : 'bg-[#FDEBD3] shadow-[3px_3px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[2px] hover:translate-y-[2px]'
-                  }`}
-                >
-                  {plan.price === 0 ? 'Get Started Free' : 'Choose Plan'}
-                </Link>
-              </div>
-            ))}
+                Start Free
+              </Link>
+            </div>
           </div>
         </div>
       </section>

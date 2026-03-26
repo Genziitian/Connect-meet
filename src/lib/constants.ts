@@ -136,7 +136,7 @@ export const DEGREE_TYPES = [
 // Legal config
 export const GRIEVANCE_OFFICER = {
   name: 'Grievance Officer — GenZ IITian Connect',
-  email: 'grievance@genziitian.com',
+  email: 'help@genziitian.in',
   address: 'India',
   responseTime: '48 hours',
 };

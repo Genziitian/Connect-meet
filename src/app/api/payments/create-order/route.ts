@@ -7,7 +7,7 @@ const razorpay = new Razorpay({
 });
 
 const PLAN_PRICES: Record<string, number> = {
-  pro: 100,       // ₹1 in paise (testing)
+  pro: 14900,     // ₹149 in paise
   premium: 29900, // ₹299 in paise
 };
 

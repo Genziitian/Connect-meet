@@ -51,7 +51,6 @@ export default function Navbar() {
             ) : (
               <>
                 <NavLink href="/#features">Features</NavLink>
-                <NavLink href="/plans">Pricing</NavLink>
                 <NavLink href="/legal/privacy">Privacy</NavLink>
               </>
             )}
