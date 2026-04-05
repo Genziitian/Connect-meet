@@ -51,7 +51,7 @@ export default function LoginPage() {
             <span className="text-2xl font-black text-[#FF3B3B]">IITian</span>
             <span className="text-lg font-black text-[#00D09C]">Connect</span>
           </div>
-          <h1 className="text-2xl font-black text-[#111] mb-2">Welcome to BunkBuddies</h1>
+          <h1 className="text-2xl font-black text-[#111] mb-2">Welcome to Gen-Z IITian Connect</h1>
           <p className="text-[#555] text-sm">Sign in to connect with fellow students</p>
         </div>
 
