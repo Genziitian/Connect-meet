@@ -15,15 +15,14 @@ import {
   Video,
   Shield,
   User,
-  CreditCard,
   BarChart3,
   Clock,
   TrendingUp,
   ArrowRight,
-  Crown,
   CheckCircle2,
   Settings,
   FileText,
+  Sparkles,
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -51,7 +50,7 @@ export default function DashboardPage() {
             <h1 className="text-2xl font-black text-[#111] mb-1">
               Welcome back{user.displayName ? `, ${user.displayName}` : ''}
             </h1>
-            <p className="text-[#555] text-sm">Your study connect dashboard</p>
+            <p className="text-[#555] text-sm">Your social connect dashboard</p>
           </div>
           <Link
             href="/connect"
@@ -209,9 +208,8 @@ export default function DashboardPage() {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-[#888]">Plan</span>
-                  <span className="font-bold text-[#00D09C] flex items-center gap-1 uppercase">
-                    {user.planType === 'premium' && <Crown className="h-3.5 w-3.5 text-[#FB923C]" />}
-                    {user.planType}
+                  <span className="font-bold text-[#00D09C] uppercase">
+                    Free for Everyone
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
@@ -228,23 +226,52 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {user.planType === 'free' && (
-                <Link
-                  href="/plans"
-                  className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-[#FB923C] border-[2px] border-[#111] py-2.5 text-sm font-bold text-white shadow-[3px_3px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
-                >
-                  <Crown className="h-4 w-4" />
-                  Upgrade Plan
-                </Link>
-              )}
+              <button
+                type="button"
+                disabled
+                className="mt-4 w-full rounded-xl bg-[#FB923C] border-[2px] border-[#111] py-2.5 text-sm font-bold text-white shadow-[3px_3px_0px_#111] opacity-90 cursor-not-allowed"
+              >
+                Coming Soon
+              </button>
             </div>
 
             {/* Quick Links */}
             <div className="bb-card bg-white p-4 space-y-1">
-              <SidebarLink href="/plans" icon={CreditCard} label="Manage Plan" />
+              <div className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[#888] font-medium bg-[#FDEBD3] border border-dashed border-[#111]/30">
+                <Sparkles className="h-4 w-4" />
+                Feature Comparison - Coming Soon
+              </div>
               <SidebarLink href="/legal/privacy" icon={Shield} label="Privacy & Safety" />
               <SidebarLink href="/legal/guidelines" icon={FileText} label="Community Guidelines" />
               <SidebarLink href="/legal/data-deletion" icon={Settings} label="Request Data Deletion" />
+            </div>
+          </div>
+        </div>
+
+        {/* Feature Comparison (Coming Soon) */}
+        <div className="mt-8">
+          <h2 className="text-2xl font-black text-[#111] text-center mb-6">Feature Comparison</h2>
+          <div className="relative bb-card bg-white overflow-hidden">
+            <div className="pointer-events-none select-none blur-sm opacity-70 p-6">
+              <div className="grid grid-cols-4 gap-4 border-b border-[#ddd] pb-3 mb-3 text-sm font-bold text-[#666]">
+                <div>Feature</div>
+                <div>Starter</div>
+                <div>Pro</div>
+                <div>Premium</div>
+              </div>
+              {['Text Chat', 'Video Chat', 'Daily Connects', 'Topic Filters', 'Priority Matching'].map((row) => (
+                <div key={row} className="grid grid-cols-4 gap-4 py-3 border-b border-[#eee] text-sm text-[#777]">
+                  <div>{row}</div>
+                  <div>...</div>
+                  <div>...</div>
+                  <div>...</div>
+                </div>
+              ))}
+            </div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="rounded-full border-[2px] border-[#111] bg-[#111] px-5 py-2 text-sm font-black text-white shadow-[3px_3px_0px_#00D09C]">
+                COMING SOON
+              </span>
             </div>
           </div>
         </div>

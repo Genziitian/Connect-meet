@@ -306,11 +306,11 @@ export default function HomePage() {
                   title: 'Get Matched Instantly',
                   desc: 'Our matching engine pairs you with another verified student. See someone who matches your study vibe? Start chatting.',
                 },
-                {
-                  bg: 'bg-[#FF6B6B]',
-                  title: 'Study Together',
-                  desc: 'Chat via text or video. Discuss assignments, prep for exams, share notes. The real study partner experience.',
-                },
+                       {
+                         bg: 'bg-[#FF6B6B]',
+                         title: 'Study Together',
+                         desc: 'Chat via text or video. Meet new people, share ideas, and connect in real time.',
+                       },
               ].map((step, i) => (
                 <div
                   key={i}
@@ -339,11 +339,11 @@ export default function HomePage() {
             { value: '500+', label: 'Verified Students', bg: 'bg-white' },
             {
               value: '10K+',
-              label: 'Study Sessions',
+              label: 'Chat Sessions',
               bg: 'bg-[#00D09C]',
               light: true,
             },
-            { value: '50+', label: 'Course Topics', bg: 'bg-white' },
+            { value: '50+', label: 'Live Rooms', bg: 'bg-white' },
           ].map((stat, i) => (
             <div
               key={i}
@@ -371,11 +371,11 @@ export default function HomePage() {
             <h2 className="text-4xl sm:text-5xl font-black mb-4">
               Not Just Random Chat.
               <br />
-              <span className="text-[#00D09C]">Smart Study Connect.</span>
+              <span className="text-[#00D09C]">Smart Social Connect.</span>
             </h2>
             <p className="text-[#555] text-lg max-w-xl mx-auto">
-              Unlike Omegle, we built this for education — with safety as the
-              core.
+              Built for anonymous social video and text chat, with safety at
+              the core.
             </p>
           </div>
 
@@ -384,7 +384,7 @@ export default function HomePage() {
               {
                 icon: BookOpen,
                 title: 'Topic-Based Matching',
-                desc: 'Match with students studying the same subject, assignment, or exam.',
+                desc: 'Match with people who share your interests and chat vibe.',
                 badge: 'Pro',
                 color: 'bg-[#00D09C]',
               },
@@ -411,15 +411,15 @@ export default function HomePage() {
               },
               {
                 icon: Users,
-                title: 'Verified Students Only',
-                desc: 'Email OTP verification ensures only real IIT Madras BS students.',
+                title: 'Verified Community',
+                desc: 'OTP verification reduces fake accounts and keeps chats authentic.',
                 badge: 'Safety',
                 color: 'bg-[#00D09C]',
               },
               {
                 icon: Sparkles,
                 title: 'Smart Queue',
-                desc: 'Priority matching for paid users. Course & level filters.',
+                desc: 'Priority matching for paid users with better discovery filters.',
                 badge: 'Premium',
                 color: 'bg-[#B794F6]',
               },
@@ -504,11 +504,11 @@ export default function HomePage() {
               {[
                 {
                   q: 'Is my identity really anonymous?',
-                  a: 'Yes. Your real name and email are never shown to other students. You get a random alias.',
+                  a: 'Yes. Your real name and email are never shown to other users. You get a random alias.',
                 },
                 {
                   q: 'Who can use this platform?',
-                  a: 'Only verified IIT Madras BS students with a valid university email.',
+                  a: 'Anyone who completes OTP verification with a valid email can use it.',
                 },
                 {
                   q: 'Is video chat safe?',
@@ -520,7 +520,7 @@ export default function HomePage() {
                 },
                 {
                   q: 'Is this like Omegle?',
-                  a: 'Built for education, not random chat. Verified users, topic matching, and Indian compliance built-in.',
+                  a: 'It offers anonymous social video and text chat with stronger safety, reporting, and moderation.',
                 },
                 {
                   q: 'What about my data privacy?',

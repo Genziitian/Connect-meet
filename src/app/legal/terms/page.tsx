@@ -35,7 +35,7 @@ export default function TermsPage() {
           {
             title: '2. Eligibility',
             content:
-              'You must be 18 years or older to use this Service. Users under 18 may only use the Service with verified parental/guardian consent. You must be a verified student (preferably IIT Madras BS program) to access the Study Connect feature. You must provide a valid, verifiable email address.',
+              'You must be 18 years or older to use this Service. Users under 18 may only use the Service with verified parental/guardian consent. You must complete account verification to access the Social Connect feature. You must provide a valid, verifiable email address.',
           },
           {
             title: '3. Account Registration',

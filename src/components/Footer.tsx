@@ -36,8 +36,8 @@ export default function Footer() {
                 </span>
               </div>
               <p className="text-sm text-[#111]/70 leading-relaxed">
-                India&apos;s first privacy-compliant anonymous study connect
-                platform for verified IIT Madras BS students.
+                Privacy-compliant anonymous social platform for safe video and
+                text chat.
               </p>
               <div className="mt-4 flex items-center gap-2 text-xs text-[#111]/60">
                 <Shield className="h-3.5 w-3.5" />
@@ -51,7 +51,7 @@ export default function Footer() {
                 Platform
               </h4>
               <ul className="space-y-2.5">
-                <FooterLink href="/connect">Study Connect</FooterLink>
+                <FooterLink href="/connect">Social Connect</FooterLink>
                 <FooterLink href="/dashboard">Dashboard</FooterLink>
                 <FooterLink href="/auth/login">Login</FooterLink>
               </ul>

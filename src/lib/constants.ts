@@ -5,7 +5,7 @@
 import { Plan } from '@/types';
 
 export const APP_NAME = 'GenZ IITian Connect';
-export const APP_TAGLINE = 'Anonymous Study Connect for Verified IIT Madras BS Students';
+export const APP_TAGLINE = 'Anonymous Social Connect for Video and Text Chat';
 export const APP_VERSION = '1.0.0';
 
 // Plan configurations
@@ -42,10 +42,10 @@ export const PLANS: Plan[] = [
     features: [
       'Everything in Starter',
       '50 connects per day',
-      'Subject-wise courses',
+      'Interest-based matching',
       'Topic-based matching',
-      '1:1 Mentorship sessions',
-      'Study group access',
+      '1:1 private chat rooms',
+      'Community room access',
     ],
   },
   {
@@ -61,11 +61,11 @@ export const PLANS: Plan[] = [
     features: [
       'Everything in Pro',
       'Unlimited connects',
-      '1:1 Mentorship with toppers',
-      'Subject-wise doubt sessions',
+      '1:1 private conversations',
+      'Advanced discovery filters',
       'Priority matching',
-      'AI study assistant',
-      'Exam prep matching',
+      'AI safety assistant',
+      'Interest-based matching boost',
     ],
   },
 ];

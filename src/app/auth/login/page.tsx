@@ -75,7 +75,7 @@ export default function LoginPage() {
               <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-[#FB923C] border-[2px] border-[#111] mb-2">
                 <Users className="h-5 w-5 text-white" />
               </div>
-              <p className="text-[10px] font-bold text-[#555]">Study Groups</p>
+              <p className="text-[10px] font-bold text-[#555]">Community Rooms</p>
             </div>
           </div>
 

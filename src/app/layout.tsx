@@ -4,9 +4,9 @@ import Providers from '@/components/Providers';
 import AppShell from '@/components/AppShell';
 
 export const metadata: Metadata = {
-  title: 'GenZ IITian Connect — Anonymous Study Connect for IIT Madras BS',
+  title: 'GenZ IITian Connect — Anonymous Social Video & Text Chat',
   description:
-    'India\'s first privacy-compliant anonymous connect platform for verified IIT Madras BS students. Study together, discuss topics, and build connections safely.',
+    'Privacy-compliant anonymous social platform for safe video and text chat with real people.',
   keywords: [
     'IIT Madras',
     'BS Degree',
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   authors: [{ name: 'GenZ IITian' }],
   openGraph: {
     title: 'GenZ IITian Connect',
-    description: 'Anonymous study connect for verified IIT Madras BS students',
+    description: 'Anonymous social connect for safe video and text chat',
     type: 'website',
   },
 };

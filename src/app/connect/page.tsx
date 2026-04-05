@@ -48,12 +48,12 @@ type ConnectPhase = 'rules' | 'lobby' | 'queue' | 'chat' | 'ended';
 
 // ─── Prefilled / Icebreaker Messages ───
 const ICEBREAKER_MESSAGES = [
-  { emoji: '👋', text: 'Hey! Which course are you in?' },
-  { emoji: '📚', text: 'Struggling with assignments too?' },
-  { emoji: '🤝', text: 'Wanna form a study group?' },
-  { emoji: '💡', text: 'Any tips for the upcoming quiz?' },
-  { emoji: '😅', text: 'Online degree life hits different huh' },
-  { emoji: '🎯', text: 'What term are you in right now?' },
+  { emoji: '👋', text: 'Hey! Where are you chatting from today?' },
+  { emoji: '🎬', text: 'Text chat or video chat, what do you prefer?' },
+  { emoji: '🤝', text: 'Want to continue in a private room?' },
+  { emoji: '🎧', text: 'What are you listening to these days?' },
+  { emoji: '😅', text: 'How is your day going so far?' },
+  { emoji: '✨', text: 'What kind of people do you like chatting with?' },
 ];
 
 const QUICK_REPLIES = [
@@ -703,7 +703,7 @@ export default function ConnectPage() {
       <div className="min-h-[calc(100vh-4rem)] bb-grid flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-lg">
           <div className="text-center mb-6">
-            <h1 className="text-2xl font-black text-[#111] mb-2">Study Connect</h1>
+            <h1 className="text-2xl font-black text-[#111] mb-2">Social Connect</h1>
             <p className="text-[#555] text-sm">
               Choose your mode and start connecting with verified students
             </p>
@@ -1320,7 +1320,7 @@ export default function ConnectPage() {
           </div>
           <h2 className="text-2xl font-black text-[#111] mb-2">Chat Ended</h2>
           <p className="text-[#555] text-sm mb-8">
-            How was your study connect experience?
+            How was your social connect experience?
           </p>
 
           <div className="flex items-center justify-center gap-4 mb-8">

@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID!,
-  key_secret: process.env.RAZORPAY_KEY_SECRET!,
-});
-
 const PLAN_PRICES: Record<string, number> = {
   pro: 14900,     // ₹149 in paise
   premium: 29900, // ₹299 in paise
@@ -13,6 +8,18 @@ const PLAN_PRICES: Record<string, number> = {
 
 export async function POST(req: NextRequest) {
   try {
+    const keyId = process.env.RAZORPAY_KEY_ID;
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+
+    if (!keyId || !keySecret) {
+      return NextResponse.json({ error: 'Razorpay is not configured' }, { status: 500 });
+    }
+
+    const razorpay = new Razorpay({
+      key_id: keyId,
+      key_secret: keySecret,
+    });
+
     const { planId, userId } = await req.json();
 
     if (!planId || !userId) {
