@@ -149,6 +149,17 @@ export default function ConnectPage() {
 
   // ─── Camera / WebRTC Functions ───
 
+  const attachLocalStream = useCallback(() => {
+    const stream = localStreamRef.current;
+    const videoEl = localVideoRef.current;
+    if (!stream || !videoEl) return;
+
+    if (videoEl.srcObject !== stream) {
+      videoEl.srcObject = stream;
+    }
+    videoEl.play().catch(() => {});
+  }, []);
+
   const startCamera = useCallback(async () => {
     try {
       setCameraError('');
@@ -162,16 +173,10 @@ export default function ConnectPage() {
       });
       localStreamRef.current = stream;
       // Attach to video element — use rAF to ensure DOM is painted
-      const attachStream = () => {
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = stream;
-          localVideoRef.current.play().catch(() => {});
-        }
-      };
-      attachStream();
+      attachLocalStream();
       // Also retry after a short delay in case the element wasn't ready
-      requestAnimationFrame(attachStream);
-      setTimeout(attachStream, 100);
+      requestAnimationFrame(attachLocalStream);
+      setTimeout(attachLocalStream, 100);
       setCameraReady(true);
     } catch (err: any) {
       setCameraError(
@@ -185,7 +190,7 @@ export default function ConnectPage() {
       );
       setCameraReady(false);
     }
-  }, []);
+  }, [attachLocalStream]);
 
   const stopCamera = useCallback(() => {
     if (localStreamRef.current) {
@@ -500,6 +505,17 @@ export default function ConnectPage() {
     }
   }, [phase, cameraReady]);
 
+  // Re-attach stream when local video remounts after camera toggle in chat mode.
+  useEffect(() => {
+    if (phase !== 'chat' || !cameraReady || isVideoOff) return;
+    const rafId = requestAnimationFrame(attachLocalStream);
+    const timerId = setTimeout(attachLocalStream, 120);
+    return () => {
+      cancelAnimationFrame(rafId);
+      clearTimeout(timerId);
+    };
+  }, [phase, cameraReady, isVideoOff, attachLocalStream]);
+
   // Scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -524,9 +540,9 @@ export default function ConnectPage() {
         videoTrack.enabled = !videoTrack.enabled;
         setIsVideoOff(!videoTrack.enabled);
         // Re-attach stream to video element when re-enabling
-        if (videoTrack.enabled && localVideoRef.current) {
-          localVideoRef.current.srcObject = localStreamRef.current;
-          localVideoRef.current.play().catch(() => {});
+        if (videoTrack.enabled) {
+          requestAnimationFrame(attachLocalStream);
+          setTimeout(attachLocalStream, 100);
         }
       }
     }
@@ -1036,28 +1052,27 @@ export default function ConnectPage() {
 
                 {/* Local video (you) */}
                 <div className="relative flex-1 rounded-xl bg-[#1a1a2e] border-[2px] border-[#333] overflow-hidden min-h-[140px] sm:min-h-[180px]">
-                  {cameraReady && !isVideoOff ? (
-                    <video
-                      ref={localVideoRef}
-                      autoPlay
-                      playsInline
-                      muted
-                      className="w-full h-full object-cover"
-                      style={{ transform: 'scaleX(-1)' }}
-                    />
-                  ) : (
-                    <div className="flex flex-col items-center justify-center h-full">
-                      {isVideoOff ? (
-                        <>
+                  {cameraReady ? (
+                    <>
+                      <video
+                        ref={localVideoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className={cn('w-full h-full object-cover', isVideoOff && 'hidden')}
+                        style={{ transform: 'scaleX(-1)' }}
+                      />
+                      {isVideoOff && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
                           <VideoOff className="h-8 w-8 text-white/30 mb-2" />
                           <p className="text-xs text-white/50">Camera Off</p>
-                        </>
-                      ) : (
-                        <>
-                          <User className="h-10 w-10 sm:h-12 sm:w-12 text-white/20 mb-2" />
-                          <p className="text-xs text-white/50">Your Camera</p>
-                        </>
+                        </div>
                       )}
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full">
+                      <User className="h-10 w-10 sm:h-12 sm:w-12 text-white/20 mb-2" />
+                      <p className="text-xs text-white/50">Your Camera</p>
                     </div>
                   )}
                   <div className="absolute top-2 left-2 rounded-full bg-[#00D09C] px-2 py-0.5 text-[10px] text-white font-bold border-[2px] border-[#111]">
