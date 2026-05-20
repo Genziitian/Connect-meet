@@ -16,11 +16,10 @@ const io = new Server(httpServer, {
     origin: [
       'http://localhost:3000',
       'http://127.0.0.1:3000',
-      'https://connect.genziitian.in',
+      'https://genziitian.live',
+      'https://www.genziitian.live',
       process.env.FRONTEND_URL,
       /\.vercel\.app$/,
-      /\.ondigitalocean\.app$/,
-      /\.onrender\.com$/,
     ].filter(Boolean),
     methods: ['GET', 'POST'],
   },

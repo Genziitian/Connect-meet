@@ -4,3 +4,5 @@ node_modules
 .env.local
 config/firebase-admin.json
 *.firebase-adminsdk*.json
+.claude/
+Connect-meet/
