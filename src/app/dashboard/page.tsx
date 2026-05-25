@@ -23,6 +23,8 @@ import {
   Settings,
   FileText,
   Sparkles,
+  LifeBuoy,
+  Users,
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -39,6 +41,24 @@ export default function DashboardPage() {
 
   if (!isAuthenticated || !user) return null;
 
+  // Banned-user wall — blocks the entire app
+  if (user.isBanned) {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] bb-grid flex items-center justify-center p-4">
+        <div className="bb-card bg-white p-8 max-w-md text-center">
+          <div className="inline-flex h-14 w-14 items-center justify-center rounded-full border-[3px] border-[#111] bg-[#FF3B3B] shadow-[3px_3px_0_#111] mb-4">
+            <Shield className="h-7 w-7 text-white" />
+          </div>
+          <h1 className="text-2xl font-black text-[#111] mb-2">Account suspended</h1>
+          <p className="text-sm text-[#555] mb-4">
+            Your account has been banned for violating our community guidelines.
+            Contact <a href="mailto:help@genziitian.in" className="text-[#00D09C] underline font-bold">help@genziitian.in</a> if you think this is a mistake.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const currentPlan = PLANS.find((p) => p.id === user.planType);
 
   return (
@@ -53,7 +73,7 @@ export default function DashboardPage() {
             <p className="text-[#555] text-sm">Your social connect dashboard</p>
           </div>
           <Link
-            href="/connect"
+            href="/connect/start"
             className="bb-btn bb-btn-green px-6 py-3 text-sm"
           >
             <Zap className="h-4 w-4" />
@@ -130,6 +150,100 @@ export default function DashboardPage() {
                       <span className="text-xs text-[#FB923C] font-semibold">Locked</span>
                     )}
                     <ArrowRight className="h-4 w-4 text-[#888] group-hover:text-[#00D09C] transition-colors" />
+                  </div>
+                </Link>
+              </div>
+            </div>
+
+            {/* Get Help — Support + Community */}
+            <div className="bb-card bg-white p-6">
+              <h2 className="text-lg font-black text-[#111] mb-4 flex items-center gap-2">
+                <LifeBuoy className="h-5 w-5 text-[#FB923C]" />
+                Get Help & Community
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Link
+                  href="/support"
+                  className="group rounded-xl border-[2px] border-[#111] bg-[#FDEBD3] p-5 shadow-[3px_3px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FB923C] border-[2px] border-[#111]">
+                      <LifeBuoy className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm text-[#111]">Support Tickets</p>
+                      <p className="text-xs text-[#888]">Chat directly with our team</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-[#FB923C] font-semibold">Raise an issue</span>
+                    <ArrowRight className="h-4 w-4 text-[#888] group-hover:text-[#FB923C] transition-colors" />
+                  </div>
+                </Link>
+
+                <Link
+                  href="/community"
+                  className="group rounded-xl border-[2px] border-[#111] bg-[#FDEBD3] p-5 shadow-[3px_3px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#B794F6] border-[2px] border-[#111]">
+                      <Users className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm text-[#111]">Community Rooms</p>
+                      <p className="text-xs text-[#888]">Open chat with all students</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-[#B794F6] font-semibold">Coming soon</span>
+                    <ArrowRight className="h-4 w-4 text-[#888] group-hover:text-[#B794F6] transition-colors" />
+                  </div>
+                </Link>
+              </div>
+            </div>
+
+            {/* Need help / Support */}
+            <div className="bb-card bg-white p-6">
+              <h2 className="text-lg font-black text-[#111] mb-4 flex items-center gap-2">
+                <LifeBuoy className="h-5 w-5 text-[#FB923C]" />
+                Need help?
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Link
+                  href="/support"
+                  className="group rounded-xl border-[2px] border-[#111] bg-[#FDEBD3] p-5 shadow-[3px_3px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FB923C] border-[2px] border-[#111]">
+                      <LifeBuoy className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm text-[#111]">Raise a ticket</p>
+                      <p className="text-xs text-[#888]">Chat with our team</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-[#FB923C] font-semibold">Get support</span>
+                    <ArrowRight className="h-4 w-4 text-[#888] group-hover:text-[#FB923C] transition-colors" />
+                  </div>
+                </Link>
+
+                <Link
+                  href="/community"
+                  className="group rounded-xl border-[2px] border-[#111] bg-[#FDEBD3] p-5 shadow-[3px_3px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#B794F6] border-[2px] border-[#111]">
+                      <Users className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm text-[#111]">Community Rooms</p>
+                      <p className="text-xs text-[#888]">Group chat · anon handles</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-[#B794F6] font-semibold">Open community</span>
+                    <ArrowRight className="h-4 w-4 text-[#888] group-hover:text-[#B794F6] transition-colors" />
                   </div>
                 </Link>
               </div>

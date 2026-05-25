@@ -1,48 +1,100 @@
 -- ============================================================
--- GenZ IITian Connect — PostgreSQL Database Schema
+-- GenZ IITian Connect — PostgreSQL Database Schema (Supabase)
 -- Compliant with: DPDP Act 2023, IT Act 2000, IT Rules 2021
+-- ============================================================
+-- Run this ENTIRE file in Supabase SQL Editor → Run.
+-- Safe to re-run: drops any existing project tables first.
 -- ============================================================
 
 -- Enable required extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
+-- Force unqualified table names to resolve in the public schema
+SET search_path = public, extensions;
+
 -- ============================================================
--- 1. USERS TABLE
+-- 0. CLEAN SLATE (idempotent — safe to re-run)
 -- ============================================================
-CREATE TABLE users (
-    id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+DROP FUNCTION IF EXISTS public.handle_new_auth_user() CASCADE;
+DROP FUNCTION IF EXISTS public.cleanup_expired_data() CASCADE;
+
+DROP TABLE IF EXISTS public.audit_log CASCADE;
+DROP TABLE IF EXISTS public.blocked_users CASCADE;
+DROP TABLE IF EXISTS public.data_deletion_requests CASCADE;
+DROP TABLE IF EXISTS public.consent_log CASCADE;
+DROP TABLE IF EXISTS public.reports CASCADE;
+DROP TABLE IF EXISTS public.chat_sessions CASCADE;
+DROP TABLE IF EXISTS public.subscriptions CASCADE;
+DROP TABLE IF EXISTS public.users CASCADE;
+
+-- ============================================================
+-- 1. USERS TABLE (profile data — auth handled by Supabase auth.users)
+-- ============================================================
+CREATE TABLE public.users (
+    id              UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     email           VARCHAR(255) UNIQUE NOT NULL,
     display_name    VARCHAR(100),
     avatar_url      TEXT,
     phone           VARCHAR(20),
-    
+    college_name    VARCHAR(150),
+    gender          VARCHAR(20),
+    profile_complete BOOLEAN NOT NULL DEFAULT FALSE,
+
     -- Plan & Verification
     plan_type       VARCHAR(20) NOT NULL DEFAULT 'free' CHECK (plan_type IN ('free', 'pro', 'premium')),
-    is_verified     BOOLEAN NOT NULL DEFAULT FALSE,
+    is_verified     BOOLEAN NOT NULL DEFAULT TRUE,
     is_banned       BOOLEAN NOT NULL DEFAULT FALSE,
     ban_reason      TEXT,
     ban_expires_at  TIMESTAMP WITH TIME ZONE,
-    
+
     -- DPDP Act 2023 Compliance
     age_verified    BOOLEAN NOT NULL DEFAULT FALSE,
     consent_given   BOOLEAN NOT NULL DEFAULT FALSE,
     consent_version VARCHAR(10) DEFAULT '1.0',
     consent_given_at TIMESTAMP WITH TIME ZONE,
-    
+
     -- Rate limiting
-    matches_used_today  INTEGER NOT NULL DEFAULT 0,
-    matches_reset_date  DATE NOT NULL DEFAULT CURRENT_DATE,
-    
+    matches_used_today   INTEGER NOT NULL DEFAULT 0,
+    max_matches_per_day  INTEGER NOT NULL DEFAULT 20,
+    matches_reset_date   DATE NOT NULL DEFAULT CURRENT_DATE,
+
+    -- Payments
+    subscription_status VARCHAR(20),
+    last_payment_id     VARCHAR(100),
+    last_payment_at     TIMESTAMP WITH TIME ZONE,
+
     -- Device fingerprint (for abuse prevention)
     device_fingerprint_hash VARCHAR(64),
-    
+
     -- Timestamps
     created_at      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     last_active_at  TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     deleted_at      TIMESTAMP WITH TIME ZONE  -- Soft delete
 );
+
+-- Auto-create a public.users row when a new auth user signs up
+CREATE OR REPLACE FUNCTION public.handle_new_auth_user()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO public.users (id, email, display_name, avatar_url)
+    VALUES (
+        NEW.id,
+        NEW.email,
+        COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name', ''),
+        COALESCE(NEW.raw_user_meta_data->>'avatar_url', NEW.raw_user_meta_data->>'picture', '')
+    )
+    ON CONFLICT (id) DO NOTHING;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+    AFTER INSERT ON auth.users
+    FOR EACH ROW EXECUTE FUNCTION public.handle_new_auth_user();
 
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_plan_type ON users(plan_type);
@@ -267,16 +319,42 @@ $$ LANGUAGE plpgsql;
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE chat_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE reports ENABLE ROW LEVEL SECURITY;
+ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE consent_log ENABLE ROW LEVEL SECURITY;
+ALTER TABLE blocked_users ENABLE ROW LEVEL SECURITY;
 
--- Users can only view/edit their own data
-CREATE POLICY users_self_access ON users
-    FOR ALL
-    USING (id = current_setting('app.current_user_id')::UUID);
+-- Users can view their own profile
+CREATE POLICY users_select_own ON users
+    FOR SELECT USING (id = auth.uid());
+
+-- Users can update their own profile
+CREATE POLICY users_update_own ON users
+    FOR UPDATE USING (id = auth.uid());
 
 -- Users can only view their own sessions
-CREATE POLICY sessions_participant_access ON chat_sessions
-    FOR SELECT
-    USING (
-        user1_id = current_setting('app.current_user_id')::UUID
-        OR user2_id = current_setting('app.current_user_id')::UUID
-    );
+CREATE POLICY sessions_participant_select ON chat_sessions
+    FOR SELECT USING (user1_id = auth.uid() OR user2_id = auth.uid());
+
+-- Reports — users can insert reports they file, and view reports they filed
+CREATE POLICY reports_insert_own ON reports
+    FOR INSERT WITH CHECK (reporter_user_id = auth.uid());
+CREATE POLICY reports_select_own ON reports
+    FOR SELECT USING (reporter_user_id = auth.uid());
+
+-- Subscriptions — users can view their own
+CREATE POLICY subscriptions_select_own ON subscriptions
+    FOR SELECT USING (user_id = auth.uid());
+
+-- Consent log — users can view their own
+CREATE POLICY consent_select_own ON consent_log
+    FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY consent_insert_own ON consent_log
+    FOR INSERT WITH CHECK (user_id = auth.uid());
+
+-- Blocked users — users manage their own block list
+CREATE POLICY blocked_select_own ON blocked_users
+    FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY blocked_insert_own ON blocked_users
+    FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY blocked_delete_own ON blocked_users
+    FOR DELETE USING (user_id = auth.uid());

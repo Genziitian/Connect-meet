@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { COMMUNITY_RULES, STUDY_TOPICS, COURSE_LEVELS, DEGREE_TYPES } from '@/lib/constants';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/lib/supabase';
 import { ChatMode, ChatMessage, MatchFilter, ReportReason } from '@/types';
 import { io as socketIO, Socket } from 'socket.io-client';
 import {
@@ -37,6 +38,8 @@ import {
   RefreshCw,
   Camera,
   Sparkles,
+  Smile,
+  ImageIcon,
   Maximize,
   Minimize,
   MessageCircle,
@@ -114,10 +117,13 @@ export default function ConnectPage() {
   // Chat state
   const [sessionId, setSessionId] = useState('');
   const [peerName, setPeerName] = useState('');
+  const [peerUserId, setPeerUserId] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [peerTyping, setPeerTyping] = useState(false);
   const [showIcebreakers, setShowIcebreakers] = useState(true);
+  const [sessionStartedAt, setSessionStartedAt] = useState<number | null>(null);
+  const [elapsed, setElapsed] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Video / Camera state
@@ -324,10 +330,13 @@ export default function ConnectPage() {
     });
 
     // Matched!
-    socket.on('queue:matched', async ({ sessionId: sid, mode: matchMode, peerName: name, isInitiator }: { sessionId: string; mode: string; peerName: string; isInitiator: boolean }) => {
+    socket.on('queue:matched', async ({ sessionId: sid, mode: matchMode, peerName: name, peerUserId: peerUid, isInitiator }: { sessionId: string; mode: string; peerName: string; peerUserId?: string; isInitiator: boolean }) => {
       console.log('[Socket] Matched!', sid, name, 'initiator:', isInitiator);
       setSessionId(sid);
       setPeerName(name);
+      setPeerUserId(peerUid || '');
+      setSessionStartedAt(Date.now());
+      setElapsed(0);
       setMessages(SYSTEM_MESSAGES.map((m) => ({ ...m, sessionId: sid })));
       setShowIcebreakers(true);
       setRemoteStreamActive(false);
@@ -488,6 +497,15 @@ export default function ConnectPage() {
     }
   }, [isAuthenticated, user, router]);
 
+  // Session elapsed timer (chat duration)
+  useEffect(() => {
+    if (phase !== 'chat' || !sessionStartedAt) return;
+    const interval = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - sessionStartedAt) / 1000));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [phase, sessionStartedAt]);
+
   // Queue timer
   useEffect(() => {
     if (phase !== 'queue') return;
@@ -605,12 +623,27 @@ export default function ConnectPage() {
     socketRef.current?.emit('queue:join', { mode, filters });
   };
 
-  const handleReport = () => {
+  const handleReport = async () => {
+    // 1. Insert into the reports table (admin dashboard will pick it up)
+    if (user && peerUserId && !peerUserId.startsWith('anon_')) {
+      const { error } = await supabase.from('reports').insert({
+        reported_user_id: peerUserId,
+        reporter_user_id: user.id,
+        reason: reportReason,
+        description: reportDescription || null,
+      });
+      if (error) {
+        console.error('[Report] DB insert failed:', error);
+      }
+    }
+
+    // 2. Tell the server to end the session
     socketRef.current?.emit('chat:report', {
       sessionId,
       reason: reportReason,
       description: reportDescription,
     });
+
     setShowReport(false);
     setReportReason('harassment');
     setReportDescription('');
@@ -972,49 +1005,64 @@ export default function ConnectPage() {
         'flex flex-col',
         isFullscreen ? 'h-screen' : 'h-[calc(100vh-4rem)]'
       )}>
-        {/* Chat header */}
-        <div className="flex items-center justify-between border-b-[3px] border-[#111] bg-white px-4 py-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#00D09C] border-[2px] border-[#111]">
-              <User className="h-4 w-4 text-white" />
+        {/* Chat header — refined per mockup */}
+        <div className="flex items-center justify-between border-b-[3px] border-[#111] bg-white px-3 sm:px-4 py-2.5 sm:py-3">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            {/* Avatar circle with peer initial */}
+            <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-[#B794F6] border-[2px] border-[#111] flex-shrink-0">
+              <span className="text-sm font-black text-white">{peerName.charAt(0).toUpperCase() || 'A'}</span>
             </div>
-            <div>
-              <p className="text-sm font-black text-[#111]">{peerName}</p>
-              <p className="text-xs text-[#00D09C] flex items-center gap-1 font-semibold">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#00D09C]" />
-                {peerTyping ? 'Typing...' : 'Connected'}
+            <div className="min-w-0">
+              <p className="text-sm font-black text-[#111] truncate">{peerName}</p>
+              <p className="text-[10px] sm:text-xs text-[#00D09C] flex items-center gap-1 font-semibold">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#00D09C] animate-pulse" />
+                <span>{peerTyping ? 'Typing...' : 'Connected'}</span>
+                {filters.topic && (
+                  <>
+                    <span className="text-[#ddd]">·</span>
+                    <span className="text-[#888]">#{filters.topic}</span>
+                  </>
+                )}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+            {/* Timer pill */}
+            <div className="hidden sm:flex items-center gap-1 rounded-full border-[2px] border-[#111] bg-[#FDEBD3] px-2.5 py-1 text-[10px] font-black text-[#111] shadow-[2px_2px_0px_#111]">
+              <Clock className="h-3 w-3" />
+              {fmtTime(elapsed)}
+            </div>
             <button
               onClick={toggleFullscreen}
-              className="rounded-xl bg-[#FDEBD3] border-[2px] border-[#111] p-2 text-[#888] hover:text-[#B794F6] shadow-[2px_2px_0px_#111] hover:shadow-[1px_1px_0px_#111] transition-all"
+              className="hidden sm:flex rounded-lg bg-white border-[2px] border-[#111] p-1.5 text-[#888] hover:text-[#B794F6] shadow-[2px_2px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[1px] hover:translate-y-[1px] transition-all"
               title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
             >
-              {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+              {isFullscreen ? <Minimize className="h-3.5 w-3.5" /> : <Maximize className="h-3.5 w-3.5" />}
             </button>
             <button
               onClick={handleSkip}
-              className="rounded-xl bg-[#FDEBD3] border-[2px] border-[#111] p-2 text-[#888] hover:text-[#FB923C] shadow-[2px_2px_0px_#111] hover:shadow-[1px_1px_0px_#111] transition-all"
+              className="flex items-center gap-1 rounded-lg bg-[#FB923C] border-[2px] border-[#111] px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-black text-white shadow-[2px_2px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[1px] hover:translate-y-[1px] transition-all"
               title="Skip to next"
             >
-              <SkipForward className="h-4 w-4" />
+              <SkipForward className="h-3 w-3" />
+              <span className="hidden sm:inline">Skip</span>
             </button>
             <button
               onClick={() => setShowReport(true)}
-              className="rounded-xl bg-[#FDEBD3] border-[2px] border-[#111] p-2 text-[#888] hover:text-[#FF4757] shadow-[2px_2px_0px_#111] hover:shadow-[1px_1px_0px_#111] transition-all"
+              className="flex items-center gap-1 rounded-lg bg-[#FACC15] border-[2px] border-[#111] px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-black text-[#111] shadow-[2px_2px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[1px] hover:translate-y-[1px] transition-all"
               title="Report user"
             >
-              <Flag className="h-4 w-4" />
+              <Flag className="h-3 w-3" />
+              <span className="hidden sm:inline">Report</span>
             </button>
             {mode === 'text' && (
               <button
                 onClick={handleEndChat}
-                className="rounded-xl bg-[#FF6B6B] border-[2px] border-[#111] px-3 py-2 text-sm font-bold text-white shadow-[2px_2px_0px_#111] hover:shadow-[1px_1px_0px_#111] transition-all"
+                className="flex items-center gap-1 rounded-lg bg-[#FF3B3B] border-[2px] border-[#111] px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-black text-white shadow-[2px_2px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[1px] hover:translate-y-[1px] transition-all"
               >
-                End Chat
+                <X className="h-3 w-3" />
+                <span className="hidden sm:inline">End</span>
               </button>
             )}
           </div>
@@ -1150,40 +1198,59 @@ export default function ConnectPage() {
             )}
             {/* Messages area */}
             <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-[#FDEBD3]">
-              {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={cn(
-                    'max-w-[85%]',
-                    msg.type === 'system' && 'mx-auto max-w-none text-center',
-                    msg.senderId === 'self' && 'ml-auto',
-                    msg.senderId === 'peer' && 'mr-auto',
-                  )}
-                >
-                  {msg.type === 'system' ? (
-                    <div className="rounded-xl bg-white/70 border-[2px] border-[#ddd] px-3 py-1.5 text-[11px] text-[#888]">
-                      {msg.content}
-                    </div>
-                  ) : (
-                    <div
-                      className={cn(
-                        'rounded-2xl px-3 py-2 border-[2px]',
-                        msg.senderId === 'self'
-                          ? 'bg-[#00D09C] border-[#111] text-white rounded-br-md shadow-[2px_2px_0px_#111]'
-                          : 'bg-white border-[#111] text-[#111] rounded-bl-md shadow-[2px_2px_0px_#111]'
-                      )}
-                    >
-                      <p className="text-sm">{msg.content}</p>
-                      <p className={cn('text-[10px] mt-0.5', msg.senderId === 'self' ? 'text-white/60' : 'text-[#888]')}>
+              {/* Yellow system notice pills (always at top) */}
+              <div className="flex flex-col items-center gap-1.5 mb-2">
+                <div className="rounded-full bg-[#FACC15]/70 border-[2px] border-[#111] px-3 py-1 text-[10px] sm:text-[11px] text-[#111] font-bold shadow-[2px_2px_0px_#111]">
+                  🔒 Anonymous & encrypted. Nothing is saved.
+                </div>
+                <div className="rounded-full bg-[#FACC15]/70 border-[2px] border-[#111] px-3 py-1 text-[10px] sm:text-[11px] text-[#111] font-bold shadow-[2px_2px_0px_#111]">
+                  📜 Be respectful. Report violations.
+                </div>
+              </div>
+
+              {messages.filter((m) => m.type !== 'system').map((msg) => {
+                const isSelf = msg.senderId === 'self';
+                return (
+                  <div key={msg.id} className={cn('flex items-end gap-2', isSelf ? 'justify-end' : 'justify-start')}>
+                    {/* Peer avatar */}
+                    {!isSelf && (
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#B794F6] border-[2px] border-[#111] flex-shrink-0 mb-1">
+                        <span className="text-[10px] font-black text-white">
+                          {peerName.charAt(0).toUpperCase() || 'A'}
+                        </span>
+                      </div>
+                    )}
+                    <div className={cn('max-w-[80%] sm:max-w-[70%]')}>
+                      <div
+                        className={cn(
+                          'rounded-2xl px-3 py-2 border-[2px] border-[#111]',
+                          isSelf
+                            ? 'bg-[#00D09C] text-white rounded-br-md shadow-[2px_2px_0px_#111]'
+                            : 'bg-white text-[#111] rounded-bl-md shadow-[2px_2px_0px_#111]'
+                        )}
+                      >
+                        <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+                      </div>
+                      <p
+                        className={cn(
+                          'text-[9px] mt-1 px-1',
+                          isSelf ? 'text-right text-[#888]' : 'text-left text-[#888]'
+                        )}
+                      >
                         {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
-                  )}
-                </div>
-              ))}
+                  </div>
+                );
+              })}
 
               {peerTyping && (
-                <div className="mr-auto max-w-[85%]">
+                <div className="flex items-end gap-2 justify-start">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#B794F6] border-[2px] border-[#111] flex-shrink-0 mb-1">
+                    <span className="text-[10px] font-black text-white">
+                      {peerName.charAt(0).toUpperCase() || 'A'}
+                    </span>
+                  </div>
                   <div className="rounded-2xl bg-white border-[2px] border-[#111] px-3 py-2.5 rounded-bl-md inline-flex items-center gap-1 shadow-[2px_2px_0px_#111]">
                     <span className="dot-animate h-1.5 w-1.5 rounded-full bg-[#888]" />
                     <span className="dot-animate h-1.5 w-1.5 rounded-full bg-[#888]" />
@@ -1232,9 +1299,23 @@ export default function ConnectPage() {
               </div>
             )}
 
-            {/* Message input */}
+            {/* Message input — per mockup with emoji + attach */}
             <div className="border-t-[3px] border-[#111] bg-white p-2">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <button
+                  type="button"
+                  className="hidden sm:flex h-9 w-9 items-center justify-center rounded-xl border-[2px] border-[#111] bg-white text-[#888] hover:text-[#FB923C] hover:bg-[#FDEBD3] shadow-[2px_2px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[1px] hover:translate-y-[1px] transition-all flex-shrink-0"
+                  title="Emoji"
+                >
+                  <Smile className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  className="hidden sm:flex h-9 w-9 items-center justify-center rounded-xl border-[2px] border-[#111] bg-white text-[#888] hover:text-[#B794F6] hover:bg-[#FDEBD3] shadow-[2px_2px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[1px] hover:translate-y-[1px] transition-all flex-shrink-0"
+                  title="Attach"
+                >
+                  <ImageIcon className="h-4 w-4" />
+                </button>
                 <input
                   type="text"
                   value={inputMessage}
@@ -1244,14 +1325,15 @@ export default function ConnectPage() {
                   }}
                   onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                   placeholder="Type a message..."
-                  className="flex-1 rounded-xl border-[2px] border-[#111] bg-[#FDEBD3] px-3 py-2 text-sm text-[#111] placeholder:text-[#aaa] focus:border-[#00D09C] focus:ring-1 focus:ring-[#00D09C] outline-none transition-colors"
+                  className="flex-1 min-w-0 rounded-xl border-[2px] border-[#111] bg-[#FDEBD3] px-3 py-2 text-sm text-[#111] placeholder:text-[#aaa] focus:border-[#00D09C] focus:ring-1 focus:ring-[#00D09C] outline-none transition-colors"
                 />
                 <button
                   onClick={() => handleSendMessage()}
                   disabled={!inputMessage.trim()}
-                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#00D09C] border-[2px] border-[#111] text-white shadow-[2px_2px_0px_#111] hover:shadow-[1px_1px_0px_#111] disabled:opacity-50 transition-all"
+                  className="flex items-center gap-1 h-9 px-3 sm:px-4 rounded-xl bg-[#00D09C] border-[2px] border-[#111] text-white text-xs font-black shadow-[2px_2px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[1px] hover:translate-y-[1px] disabled:opacity-50 disabled:hover:translate-x-0 disabled:hover:translate-y-0 disabled:hover:shadow-[2px_2px_0px_#111] transition-all flex-shrink-0"
                 >
-                  <Send className="h-4 w-4" />
+                  <Send className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Send</span>
                 </button>
               </div>
             </div>
@@ -1386,6 +1468,15 @@ export default function ConnectPage() {
   }
 
   return null;
+}
+
+// ═══════════════════════════════════════════
+// Helpers
+// ═══════════════════════════════════════════
+function fmtTime(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
 
 // ═══════════════════════════════════════════

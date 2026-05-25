@@ -14,14 +14,15 @@ const httpServer = createServer();
 const io = new Server(httpServer, {
   cors: {
     origin: [
-      'http://localhost:3000',
-      'http://127.0.0.1:3000',
+      /^http:\/\/localhost:\d+$/,
+      /^http:\/\/127\.0\.0\.1:\d+$/,
       'https://genziitian.live',
       'https://www.genziitian.live',
       process.env.FRONTEND_URL,
       /\.vercel\.app$/,
     ].filter(Boolean),
     methods: ['GET', 'POST'],
+    credentials: true,
   },
   transports: ['websocket', 'polling'],
 });
@@ -273,6 +274,7 @@ function tryMatch(entry) {
     sessionId,
     mode: entry.mode,
     peerName: session.user2.anonName,
+    peerUserId: session.user2.userId,
     startedAt: session.startedAt,
     isInitiator: true,
   });
@@ -281,6 +283,7 @@ function tryMatch(entry) {
     sessionId,
     mode: entry.mode,
     peerName: session.user1.anonName,
+    peerUserId: session.user1.userId,
     startedAt: session.startedAt,
     isInitiator: false,
   });
@@ -309,10 +312,30 @@ function endSession(sessionId, endedBySocketId) {
 
 // ─── Periodic queue status broadcast ───
 setInterval(() => {
+  // Breakdown queue by mode
+  let textCount = 0;
+  let videoCount = 0;
+  for (const entry of waitingQueue) {
+    if (entry.mode === 'video') videoCount++;
+    else textCount++;
+  }
+  // Active sessions broken down by mode
+  let activeText = 0;
+  let activeVideo = 0;
+  for (const session of activeSessions.values()) {
+    if (session.mode === 'video') activeVideo++;
+    else activeText++;
+  }
   io.emit('stats:update', {
     onlineUsers: io.sockets.sockets.size,
     inQueue: waitingQueue.length,
     activeSessions: activeSessions.size,
+    breakdown: {
+      textQueue: textCount,
+      videoQueue: videoCount,
+      activeText,
+      activeVideo,
+    },
   });
 }, 5000);
 

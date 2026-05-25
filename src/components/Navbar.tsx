@@ -11,6 +11,7 @@ import {
   Shield,
   CreditCard,
   ChevronDown,
+  LayoutDashboard,
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -37,7 +38,7 @@ export default function Navbar() {
               <>
                 <NavLink href="/dashboard">Dashboard</NavLink>
                 <Link
-                  href="/connect"
+                  href="/connect/start"
                   className="text-sm font-semibold text-[#111] hover:text-[#00D09C] transition-colors flex items-center gap-1.5"
                 >
                   <span className="relative flex h-2 w-2">
@@ -46,7 +47,17 @@ export default function Navbar() {
                   </span>
                   Connect
                 </Link>
+                <NavLink href="/community">Community</NavLink>
                 <NavLink href="/plans">Plans</NavLink>
+                {user?.role === 'admin' && (
+                  <Link
+                    href="/admin"
+                    className="text-sm font-bold text-[#FF3B3B] hover:text-[#111] transition-colors flex items-center gap-1"
+                  >
+                    <Shield className="h-3.5 w-3.5" />
+                    Admin
+                  </Link>
+                )}
               </>
             ) : (
               <>
@@ -101,6 +112,15 @@ export default function Navbar() {
                     >
                       Privacy
                     </DropdownLink>
+                    {user?.role === 'admin' && (
+                      <DropdownLink
+                        href="/admin"
+                        icon={<LayoutDashboard className="h-4 w-4 text-[#FF3B3B]" />}
+                        onClick={() => setIsProfileOpen(false)}
+                      >
+                        <span className="text-[#FF3B3B] font-bold">Admin Dashboard</span>
+                      </DropdownLink>
+                    )}
                     <hr className="my-1 border-[#eee]" />
                     <button
                       onClick={() => {
@@ -150,10 +170,16 @@ export default function Navbar() {
                 Dashboard
               </MobileLink>
               <MobileLink
-                href="/connect"
+                href="/connect/start"
                 onClick={() => setIsMobileOpen(false)}
               >
                 🟢 Connect Now
+              </MobileLink>
+              <MobileLink
+                href="/community"
+                onClick={() => setIsMobileOpen(false)}
+              >
+                # Community Rooms
               </MobileLink>
               <MobileLink
                 href="/plans"
@@ -161,6 +187,11 @@ export default function Navbar() {
               >
                 Plans
               </MobileLink>
+              {user?.role === 'admin' && (
+                <MobileLink href="/admin" onClick={() => setIsMobileOpen(false)}>
+                  <span className="text-[#FF3B3B] font-bold">🛡 Admin Dashboard</span>
+                </MobileLink>
+              )}
             </>
           ) : (
             <>

@@ -1,28 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import admin from 'firebase-admin';
-
-function getAdminDb() {
-  const projectId = process.env.FIREBASE_PROJECT_ID;
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
-
-  if (!projectId || !clientEmail || !privateKey) {
-    throw new Error('Firebase Admin is not configured');
-  }
-
-  if (admin.apps.length === 0) {
-    admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId,
-        clientEmail,
-        privateKey,
-      }),
-    });
-  }
-
-  return admin.firestore();
-}
+import { getServiceRoleSupabase } from '@/lib/supabase';
 
 const PLAN_LIMITS: Record<string, number> = {
   pro: 50,
@@ -31,8 +9,6 @@ const PLAN_LIMITS: Record<string, number> = {
 
 export async function POST(req: NextRequest) {
   try {
-    const adminDb = getAdminDb();
-
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, planId, userId } =
       await req.json();
 
@@ -51,15 +27,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid payment signature' }, { status: 400 });
     }
 
-    // Payment verified — update user plan in Firestore
+    // Payment verified — update user plan in Supabase
+    const supabase = getServiceRoleSupabase();
     const maxMatches = PLAN_LIMITS[planId] ?? 20;
-    await adminDb.doc(`users/${userId}`).update({
-      planType: planId,
-      maxMatchesPerDay: maxMatches,
-      lastPaymentId: razorpay_payment_id,
-      lastPaymentAt: new Date(),
-      subscriptionStatus: 'active',
-    });
+
+    const { error } = await supabase
+      .from('users')
+      .update({
+        plan_type: planId,
+        max_matches_per_day: maxMatches,
+        last_payment_id: razorpay_payment_id,
+        last_payment_at: new Date().toISOString(),
+        subscription_status: 'active',
+      })
+      .eq('id', userId);
+
+    if (error) {
+      console.error('Supabase update error:', error);
+      return NextResponse.json({ error: 'Failed to update user plan' }, { status: 500 });
+    }
 
     return NextResponse.json({ success: true, planId });
   } catch (error) {

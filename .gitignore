@@ -6,3 +6,10 @@ config/firebase-admin.json
 *.firebase-adminsdk*.json
 .claude/
 Connect-meet/
+
+# TypeScript build cache
+tsconfig.tsbuildinfo
+
+# Supabase CLI local state
+supabase/.temp/
+supabase/.branches/

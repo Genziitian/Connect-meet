@@ -25,15 +25,19 @@ export type MatchFilter = {
   examPrep?: string;
 };
 
+export type UserRole = 'user' | 'admin' | 'moderator';
+
 export interface User {
   id: string;
   email: string;
   displayName?: string;
+  anonName?: string;
   avatarUrl?: string;
   collegeName?: string;
   gender?: 'male' | 'female' | 'other' | 'prefer-not-to-say';
   profileComplete: boolean;
   planType: PlanType;
+  role: UserRole;
   isVerified: boolean;
   isBanned: boolean;
   ageVerified: boolean;
