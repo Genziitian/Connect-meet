@@ -7,7 +7,14 @@ import { cookies } from 'next/headers';
 import { getServerSupabase } from '@/lib/supabase';
 
 export async function GET(req: Request) {
-  const url = new URL(req.url);
+  // Build a URL that respects the public-facing host (Nginx forwards via X-Forwarded-*)
+  const forwardedHost = req.headers.get('x-forwarded-host') || req.headers.get('host');
+  const forwardedProto = req.headers.get('x-forwarded-proto') || 'http';
+  const incoming = new URL(req.url);
+  const url = forwardedHost
+    ? new URL(`${forwardedProto}://${forwardedHost}${incoming.pathname}${incoming.search}`)
+    : incoming;
+
   const code = url.searchParams.get('code');
   const explicitNext = url.searchParams.get('next');
 
@@ -17,7 +24,17 @@ export async function GET(req: Request) {
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
-      return NextResponse.redirect(new URL('/auth/login?error=oauth', url.origin));
+      console.error('[auth/callback] exchangeCodeForSession failed:', {
+        message: error.message,
+        status: error.status,
+        name: error.name,
+        code: code.slice(0, 8) + '...',
+        host: req.headers.get('host'),
+        proto: req.headers.get('x-forwarded-proto'),
+      });
+      return NextResponse.redirect(
+        new URL(`/auth/login?error=oauth&reason=${encodeURIComponent(error.message)}`, url.origin)
+      );
     }
   }
 
