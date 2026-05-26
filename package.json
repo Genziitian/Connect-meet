@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start -p $PORT",
-    "lint": "next lint"
+    "lint": "next lint",
+    "icons": "node scripts/generate-favicons.mjs"
   },
   "keywords": [],
   "author": "",
@@ -25,6 +26,8 @@
     "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
+    "@realfavicongenerator/generate-favicon": "^0.8.3",
+    "@realfavicongenerator/image-adapter-node": "^0.8.3",
     "@tailwindcss/postcss": "^4.2.1",
     "@types/node": "^25.3.3",
     "@types/react": "^19.2.14",
