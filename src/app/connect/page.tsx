@@ -1117,7 +1117,7 @@ export default function ConnectPage() {
         )}>
           {/* Video section (if video mode) — mobile: fullscreen + PiP, desktop: side-by-side */}
           {mode === 'video' && (
-            <div className="relative flex flex-col md:flex-1 bg-[#111] md:border-r-[3px] border-[#111]">
+            <div className="relative flex-1 flex flex-col bg-[#111] md:border-r-[3px] border-[#111]">
               {/* MOBILE: top bar (LIVE pill + Skip) */}
               <div className="md:hidden absolute top-3 left-3 right-3 z-20 flex items-center justify-between gap-2 pointer-events-none">
                 <div className="inline-flex items-center gap-1.5 rounded-full border-[2px] border-[#111] bg-[#FF3B3B] px-2.5 py-1 text-[10px] font-black text-white shadow-[2px_2px_0_#111]">

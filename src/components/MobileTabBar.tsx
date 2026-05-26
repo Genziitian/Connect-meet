@@ -22,6 +22,8 @@ export default function MobileTabBar() {
   if (pathname.startsWith('/auth') || pathname.startsWith('/admin')) return null;
   // Hide while inside an active room (chat takes full height)
   if (pathname.startsWith('/community/') && pathname.split('/').length > 2) return null;
+  // Hide during 1-on-1 connect chat (immersive video / text full screen)
+  if (pathname === '/connect') return null;
 
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t-[3px] border-[#111] bg-white flex justify-around items-end px-3 pt-2 pb-4">
