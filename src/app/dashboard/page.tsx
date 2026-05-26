@@ -70,7 +70,7 @@ export default function DashboardPage() {
             <h1 className="text-2xl font-black text-[#111] mb-1">
               Welcome back{user.displayName ? `, ${user.displayName}` : ''}
             </h1>
-            <p className="text-[#555] text-sm">Your social connect dashboard</p>
+            <p className="text-[#555] text-sm">Your BS Degree social hub</p>
           </div>
           <Link
             href="/connect/start"

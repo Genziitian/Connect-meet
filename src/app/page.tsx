@@ -26,6 +26,10 @@ export default function HomePage() {
       {/* ══════════ HERO ══════════ */}
       <section className="relative px-4 sm:px-6 lg:px-8 pt-14 sm:pt-24 pb-6 max-w-7xl mx-auto">
         <div className="text-center max-w-4xl mx-auto">
+          <div className="inline-flex items-center gap-1.5 rounded-full border-[2px] border-[#111] bg-[#00D09C] px-3 py-1 text-[10px] sm:text-xs font-black text-white shadow-[2px_2px_0px_#111] mb-6">
+            <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+            Social Media · Built for IITM BS Degree Students
+          </div>
           <h1 className="text-5xl sm:text-6xl lg:text-[5.5rem] font-black leading-[1.05] tracking-tight">
             Online Degree feels{' '}
             <span className="relative inline-block">
@@ -49,9 +53,8 @@ export default function HomePage() {
           </h1>
 
           <p className="mt-6 text-lg sm:text-xl text-[#555] max-w-2xl mx-auto leading-relaxed">
-            As an IIT Madras BS student, your campus is your screen. No
-            corridors, no canteen hangouts. Find someone who fits your study
-            life — not just the empty chat.
+            The social platform built <span className="font-black text-[#111]">exclusively for BS Degree students</span>.
+            No corridors, no canteen hangouts — but a real community of people who get the grind. Find study partners, vent rooms, late-night talks, all anon by default.
           </p>
 
           <div className="flex flex-wrap gap-4 mt-10 justify-center">

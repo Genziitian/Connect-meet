@@ -127,9 +127,11 @@ export default function LoginPage() {
             <br />
             <span className="text-[#00D09C]">anon.</span>
           </h1>
+          <p className="text-[#555] text-sm font-medium mb-2 max-w-md">
+            <span className="font-black text-[#111]">Social media built for BS Degree students.</span>
+          </p>
           <p className="text-[#555] text-sm font-medium mb-8 max-w-md">
-            Sign in with your student email. We&apos;ll send you a 6-digit code. We never see your real
-            identity in chat.
+            Sign in with your student email. We&apos;ll send you a 6-digit code. We never see your real identity in chat.
           </p>
           <div className="flex gap-4">
             <Stick color="#B794F6" />
@@ -147,7 +149,7 @@ export default function LoginPage() {
               <br />
               <span className="text-[#00D09C]">anon.</span>
             </h1>
-            <p className="text-xs text-[#555] mt-2">We&apos;ll send a code to your student email.</p>
+            <p className="text-xs text-[#555] mt-2">Social media for BS Degree students. We&apos;ll send a code to your student email.</p>
           </div>
 
           <div className="bb-card bg-white p-6 sm:p-7">
