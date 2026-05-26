@@ -1,0 +1,46 @@
+{
+  "name": "GenZ IITian Connect",
+  "short_name": "GenZ Connect",
+  "description": "Anonymous student chat + community rooms",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FDEBD3",
+  "theme_color": "#00D09C",
+  "categories": ["social", "education", "communication"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Connect now",
+      "short_name": "Connect",
+      "url": "/connect/start",
+      "description": "Start a new 1-on-1 or group chat"
+    },
+    {
+      "name": "Community rooms",
+      "short_name": "Rooms",
+      "url": "/community",
+      "description": "Browse community rooms"
+    }
+  ]
+}

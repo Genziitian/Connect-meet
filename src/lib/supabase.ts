@@ -9,7 +9,17 @@ import { createClient } from '@supabase/supabase-js';
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-export const supabase = createBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Cookie options that make sessions persist for 7 days across browser restarts
+const SEVEN_DAYS = 60 * 60 * 24 * 7;
+
+export const supabase = createBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  cookieOptions: {
+    maxAge: SEVEN_DAYS,
+    sameSite: 'lax',
+    secure: typeof window !== 'undefined' && window.location.protocol === 'https:',
+    path: '/',
+  },
+});
 
 export function getServerSupabase(cookieStore: {
   get(name: string): { value: string } | undefined;
@@ -20,7 +30,12 @@ export function getServerSupabase(cookieStore: {
       get: (name) => cookieStore.get(name)?.value,
       set: (name, value, options) => {
         try {
-          cookieStore.set(name, value, options);
+          cookieStore.set(name, value, {
+            ...options,
+            maxAge: options?.maxAge ?? SEVEN_DAYS,
+            sameSite: options?.sameSite ?? 'lax',
+            path: options?.path ?? '/',
+          });
         } catch {
           // ignore — called from Server Component
         }
