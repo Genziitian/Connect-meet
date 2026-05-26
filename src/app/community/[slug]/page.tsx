@@ -1062,98 +1062,110 @@ function renderMessagesWithDateSeparators(
       <div
         key={m.id}
         id={`msg-${m.id}`}
-        className="group flex items-start gap-2 sm:gap-3 mt-3 rounded-lg transition-shadow"
+        className={`group flex w-full mt-3 ${fromMe ? 'justify-start' : 'justify-end'}`}
       >
-        <Avatar handle={m.handle} />
-        <div className="flex-1 min-w-0">
-          <p className="text-[11px] font-bold mb-0.5 flex items-center gap-1.5 flex-wrap">
-            <span className="text-[#111]">{fromMe ? `${m.handle} (you)` : m.handle}</span>
-            {isHost && (
-              <span className="rounded-full bg-[#FF6B6B] border border-[#111] px-1.5 py-px text-[8px] font-black uppercase text-white">
-                Host
-              </span>
-            )}
-            <span className="text-[#888] font-medium">{formatTime(m.created_at)}</span>
-          </p>
-
-          {/* Reply context */}
-          {m.reply_to_id && (
-            <button
-              type="button"
-              onClick={() => handlers.onScrollToParent(m.reply_to_id!)}
-              className="block w-full text-left mb-1 rounded-lg border-l-[3px] border-[#00D09C] bg-white/70 px-2 py-1 hover:bg-white"
-            >
-              <p className="text-[10px] font-black text-[#00875A] flex items-center gap-1">
-                <Reply className="h-2.5 w-2.5" />
-                Replying to {m.reply_to_handle}
-              </p>
-              <p className="text-[11px] text-[#555] truncate">{m.reply_to_excerpt}</p>
-            </button>
-          )}
-
-          {m.body && (
-            <p className="text-xs sm:text-sm text-[#111] whitespace-pre-wrap break-words leading-snug">
-              {m.body}
-            </p>
-          )}
-          {m.image_url && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={m.image_url}
-              alt=""
-              className="mt-1 max-h-60 max-w-[260px] rounded-xl border-[2px] border-[#111] shadow-[2px_2px_0_#111] object-contain bg-white"
-              loading="lazy"
-            />
-          )}
-        </div>
-
-        <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          {/* Reply — anyone can reply to any message */}
-          <button
-            onClick={() => handlers.onReply(m)}
-            title="Reply"
-            className="flex h-6 w-6 items-center justify-center rounded-md bg-[#00D09C]/40 hover:bg-[#00D09C] hover:text-white border border-[#111]"
-          >
-            <Reply className="h-3 w-3" />
-          </button>
-          {!fromMe && (
-            <button
-              onClick={() => handlers.onFlag(m)}
-              title="Report this message"
-              className="flex h-6 w-6 items-center justify-center rounded-md bg-[#FBBF24]/40 hover:bg-[#FBBF24] border border-[#111]"
-            >
-              <Flag className="h-3 w-3" />
-            </button>
-          )}
-          {isAdmin && (
-            <>
-              <button
-                onClick={() => handlers.onPin(m)}
-                title={m.is_pinned ? 'Unpin' : 'Pin to top'}
-                className={`flex h-6 w-6 items-center justify-center rounded-md border border-[#111] ${m.is_pinned ? 'bg-[#00D09C] text-white' : 'bg-[#00D09C]/40 hover:bg-[#00D09C] hover:text-white'}`}
-              >
-                {m.is_pinned ? <PinOff className="h-3 w-3" /> : <Pin className="h-3 w-3" />}
-              </button>
-              {!fromMe && (
-                <>
-                  <button
-                    onClick={() => handlers.onBan(m.user_id, m.handle)}
-                    title="Ban user (admin)"
-                    className="flex h-6 w-6 items-center justify-center rounded-md bg-[#B794F6]/40 hover:bg-[#B794F6] hover:text-white border border-[#111]"
-                  >
-                    <UserX className="h-3 w-3" />
-                  </button>
-                  <button
-                    onClick={() => handlers.onDelete(m)}
-                    title="Delete (admin)"
-                    className="flex h-6 w-6 items-center justify-center rounded-md bg-[#FF3B3B]/40 hover:bg-[#FF3B3B] hover:text-white border border-[#111]"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
-                </>
+        <div className={`flex items-start gap-2 sm:gap-3 max-w-[85%] sm:max-w-[75%] ${fromMe ? 'flex-row' : 'flex-row-reverse'}`}>
+          <Avatar handle={m.handle} />
+          <div className={`min-w-0 ${fromMe ? 'text-left' : 'text-right'}`}>
+            <p className={`text-[11px] font-bold mb-0.5 flex items-center gap-1.5 flex-wrap ${fromMe ? 'justify-start' : 'justify-end'}`}>
+              <span className="text-[#111]">{fromMe ? `${m.handle} (you)` : m.handle}</span>
+              {isHost && (
+                <span className="rounded-full bg-[#FF6B6B] border border-[#111] px-1.5 py-px text-[8px] font-black uppercase text-white">
+                  Host
+                </span>
               )}
-            </>
-          )}
+              <span className="text-[#888] font-medium">{formatTime(m.created_at)}</span>
+            </p>
+
+            {/* Reply context */}
+            {m.reply_to_id && (
+              <button
+                type="button"
+                onClick={() => handlers.onScrollToParent(m.reply_to_id!)}
+                className={`block w-full mb-1 rounded-lg ${fromMe ? 'border-l-[3px] text-left' : 'border-r-[3px] text-right'} border-[#00D09C] bg-white/70 px-2 py-1 hover:bg-white`}
+              >
+                <p className={`text-[10px] font-black text-[#00875A] flex items-center gap-1 ${fromMe ? 'justify-start' : 'justify-end'}`}>
+                  <Reply className="h-2.5 w-2.5" />
+                  Replying to {m.reply_to_handle}
+                </p>
+                <p className="text-[11px] text-[#555] truncate">{m.reply_to_excerpt}</p>
+              </button>
+            )}
+
+            {/* Message bubble */}
+            {m.body && (
+              <div
+                className={`inline-block max-w-full rounded-2xl border-[2px] border-[#111] px-3 py-2 shadow-[2px_2px_0_#111] ${
+                  fromMe
+                    ? 'bg-[#00D09C] text-white rounded-tl-md'
+                    : 'bg-white text-[#111] rounded-tr-md'
+                }`}
+              >
+                <p className="text-xs sm:text-sm whitespace-pre-wrap break-words leading-snug">
+                  {m.body}
+                </p>
+              </div>
+            )}
+            {m.image_url && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={m.image_url}
+                alt=""
+                className={`mt-1 max-h-60 max-w-[260px] rounded-xl border-[2px] border-[#111] shadow-[2px_2px_0_#111] object-contain bg-white ${fromMe ? '' : 'ml-auto'}`}
+                loading="lazy"
+              />
+            )}
+          </div>
+
+          {/* Action buttons — always on the outer side (away from screen edge) */}
+          <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            {/* Reply — anyone can reply to any message */}
+            <button
+              onClick={() => handlers.onReply(m)}
+              title="Reply"
+              className="flex h-6 w-6 items-center justify-center rounded-md bg-[#00D09C]/40 hover:bg-[#00D09C] hover:text-white border border-[#111]"
+            >
+              <Reply className="h-3 w-3" />
+            </button>
+            {!fromMe && (
+              <button
+                onClick={() => handlers.onFlag(m)}
+                title="Report this message"
+                className="flex h-6 w-6 items-center justify-center rounded-md bg-[#FBBF24]/40 hover:bg-[#FBBF24] border border-[#111]"
+              >
+                <Flag className="h-3 w-3" />
+              </button>
+            )}
+            {isAdmin && (
+              <>
+                <button
+                  onClick={() => handlers.onPin(m)}
+                  title={m.is_pinned ? 'Unpin' : 'Pin to top'}
+                  className={`flex h-6 w-6 items-center justify-center rounded-md border border-[#111] ${m.is_pinned ? 'bg-[#00D09C] text-white' : 'bg-[#00D09C]/40 hover:bg-[#00D09C] hover:text-white'}`}
+                >
+                  {m.is_pinned ? <PinOff className="h-3 w-3" /> : <Pin className="h-3 w-3" />}
+                </button>
+                {!fromMe && (
+                  <>
+                    <button
+                      onClick={() => handlers.onBan(m.user_id, m.handle)}
+                      title="Ban user (admin)"
+                      className="flex h-6 w-6 items-center justify-center rounded-md bg-[#B794F6]/40 hover:bg-[#B794F6] hover:text-white border border-[#111]"
+                    >
+                      <UserX className="h-3 w-3" />
+                    </button>
+                    <button
+                      onClick={() => handlers.onDelete(m)}
+                      title="Delete (admin)"
+                      className="flex h-6 w-6 items-center justify-center rounded-md bg-[#FF3B3B]/40 hover:bg-[#FF3B3B] hover:text-white border border-[#111]"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
     );

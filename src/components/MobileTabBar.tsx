@@ -4,13 +4,22 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import { Globe, Zap, Hash, User } from 'lucide-react';
+import { Globe, Zap, Hash, Users } from 'lucide-react';
 
-const TABS = [
+type Tab = {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  match: string[];
+  primary?: boolean;
+  comingSoon?: boolean;
+};
+
+const TABS: Tab[] = [
   { href: '/dashboard', label: 'Home', icon: Globe, match: ['/dashboard'] },
   { href: '/connect/start', label: 'Connect', icon: Zap, primary: true, match: ['/connect'] },
   { href: '/community', label: 'Rooms', icon: Hash, match: ['/community'] },
-  { href: '/dashboard', label: 'Me', icon: User, match: ['/profile', '/me'] },
+  { href: '#', label: 'Friends', icon: Users, match: [], comingSoon: true },
 ];
 
 export default function MobileTabBar() {
@@ -39,6 +48,23 @@ export default function MobileTabBar() {
             >
               <Icon className="h-6 w-6" />
             </Link>
+          );
+        }
+        if (t.comingSoon) {
+          return (
+            <button
+              key={i}
+              type="button"
+              disabled
+              aria-label={`${t.label} — coming soon`}
+              className="relative flex flex-col items-center gap-0.5 text-[10px] font-black text-[#bbb] cursor-not-allowed"
+            >
+              <Icon className="h-5 w-5" />
+              {t.label}
+              <span className="absolute -top-1.5 -right-3 rounded-full border border-[#111] bg-[#FBBF24] px-1 py-px text-[7px] font-black text-[#111] leading-none">
+                SOON
+              </span>
+            </button>
           );
         }
         return (

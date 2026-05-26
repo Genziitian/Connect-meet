@@ -143,6 +143,9 @@ export default function ConnectPage() {
   const [reportReason, setReportReason] = useState<ReportReason>('harassment');
   const [reportDescription, setReportDescription] = useState('');
 
+  // Exit confirmation — fires for End and Skip so users don't drop the conversation by accident
+  const [exitIntent, setExitIntent] = useState<'end' | 'skip' | null>(null);
+
   // Rating state
   const [rating, setRating] = useState<'good' | 'bad' | null>(null);
 
@@ -1083,7 +1086,7 @@ export default function ConnectPage() {
               {isFullscreen ? <Minimize className="h-3.5 w-3.5" /> : <Maximize className="h-3.5 w-3.5" />}
             </button>
             <button
-              onClick={handleSkip}
+              onClick={() => setExitIntent('skip')}
               className="flex items-center gap-1 rounded-lg bg-[#FB923C] border-[2px] border-[#111] px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-black text-white shadow-[2px_2px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[1px] hover:translate-y-[1px] transition-all"
               title="Skip to next"
             >
@@ -1100,7 +1103,7 @@ export default function ConnectPage() {
             </button>
             {mode === 'text' && (
               <button
-                onClick={handleEndChat}
+                onClick={() => setExitIntent('end')}
                 className="flex items-center gap-1 rounded-lg bg-[#FF3B3B] border-[2px] border-[#111] px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-black text-white shadow-[2px_2px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[1px] hover:translate-y-[1px] transition-all"
               >
                 <X className="h-3 w-3" />
@@ -1125,7 +1128,7 @@ export default function ConnectPage() {
                   LIVE · {fmtTime(elapsed)}{filters.topic ? ` · #${filters.topic}` : ''}
                 </div>
                 <button
-                  onClick={handleSkip}
+                  onClick={() => setExitIntent('skip')}
                   className="pointer-events-auto inline-flex items-center gap-1 rounded-lg border-[2px] border-[#111] bg-[#FB923C] px-2.5 py-1 text-[10px] font-black text-white shadow-[2px_2px_0_#111] active:translate-x-[1px] active:translate-y-[1px]"
                 >
                   <SkipForward className="h-3 w-3" /> Skip
@@ -1224,7 +1227,7 @@ export default function ConnectPage() {
                   Icon={MessageCircle}
                 />
                 <FloatBtn onClick={() => setShowReport(true)} color="#FBBF24" Icon={Flag} />
-                <FloatBtn onClick={handleEndChat} color="#FF3B3B" Icon={X} />
+                <FloatBtn onClick={() => setExitIntent('end')} color="#FF3B3B" Icon={X} />
               </div>
 
               {/* DESKTOP video controls bar (hidden on mobile) */}
@@ -1248,7 +1251,7 @@ export default function ConnectPage() {
                   {isVideoOff ? <VideoOff className="h-4 w-4" /> : <VideoIcon className="h-4 w-4" />}
                 </button>
                 <button
-                  onClick={handleEndChat}
+                  onClick={() => setExitIntent('end')}
                   className="rounded-full bg-[#FF6B6B] border-[2px] border-[#111] px-4 py-2.5 text-xs font-bold text-white shadow-[2px_2px_0px_#111] hover:shadow-[1px_1px_0px_#111] transition-all"
                 >
                   End
@@ -1426,6 +1429,43 @@ export default function ConnectPage() {
             </div>
           </div>
         </div>
+
+        {/* Exit confirmation — End / Skip both flow through here */}
+        {exitIntent && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
+            <div className="w-full max-w-sm bb-card bg-white p-6 text-center">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#FF3B3B] border-[3px] border-[#111] shadow-[3px_3px_0px_#111] mb-3">
+                <X className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-lg font-black text-[#111] mb-1">
+                {exitIntent === 'skip' ? 'Skip this chat?' : 'End this chat?'}
+              </h3>
+              <p className="text-sm text-[#555] mb-5">
+                You are ending this conversation.
+                {exitIntent === 'skip' && ' We’ll find you a new match right after.'}
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setExitIntent(null)}
+                  className="flex-1 rounded-xl border-[2px] border-[#111] bg-white py-2.5 text-sm font-bold text-[#111] shadow-[3px_3px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+                >
+                  Continue
+                </button>
+                <button
+                  onClick={() => {
+                    const intent = exitIntent;
+                    setExitIntent(null);
+                    if (intent === 'skip') handleSkip();
+                    else handleEndChat();
+                  }}
+                  className="flex-1 rounded-xl border-[2px] border-[#111] bg-[#FF3B3B] py-2.5 text-sm font-bold text-white shadow-[3px_3px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+                >
+                  Exit
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Report Modal */}
         {showReport && (

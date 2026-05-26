@@ -22,6 +22,8 @@ export default function AppShell({ children }: { children: ReactNode }) {
     pathname.startsWith('/auth') ||
     pathname.startsWith('/admin') ||
     inActiveRoom;
+  // Hide the footer on immersive chat surfaces so the mobile keyboard can't scroll it into view
+  const hideFooter = pathname === '/connect' || inActiveRoom;
 
   return (
     <>
@@ -35,7 +37,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
       >
         {children}
       </main>
-      {!isFullscreen && <Footer />}
+      {!isFullscreen && !hideFooter && <Footer />}
       {!isFullscreen && <MobileTabBar />}
     </>
   );
