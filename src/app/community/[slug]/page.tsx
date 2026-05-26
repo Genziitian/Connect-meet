@@ -26,6 +26,17 @@ interface Room {
   tagline: string;
   host_alias: string;
   is_active: boolean;
+  requires_approval: boolean;
+}
+
+interface JoinRequest {
+  id: string;
+  room_id: string;
+  user_id: string;
+  status: 'pending' | 'approved' | 'rejected';
+  message: string | null;
+  reject_reason: string | null;
+  requested_at: string;
 }
 
 interface RoomMessage {
@@ -71,6 +82,10 @@ export default function RoomDetailPage() {
   const [renaming, setRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState('');
   const [renameBusy, setRenameBusy] = useState(false);
+  const [needsApproval, setNeedsApproval] = useState(false);
+  const [joinRequest, setJoinRequest] = useState<JoinRequest | null>(null);
+  const [joinNote, setJoinNote] = useState('');
+  const [submittingRequest, setSubmittingRequest] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -88,7 +103,7 @@ export default function RoomDetailPage() {
 
     const { data: roomRow, error: roomErr } = await supabase
       .from('community_rooms')
-      .select('id, slug, name, description, emoji, color, tagline, host_alias, is_active')
+      .select('id, slug, name, description, emoji, color, tagline, host_alias, is_active, requires_approval')
       .eq('slug', slug)
       .maybeSingle<Room>();
 
@@ -112,6 +127,20 @@ export default function RoomDetailPage() {
       p_room_id: roomRow.id,
     });
     if (hErr) {
+      // RPC raises 'APPROVAL_REQUIRED' when the room needs admin approval
+      if (hErr.message && hErr.message.includes('APPROVAL_REQUIRED')) {
+        setNeedsApproval(true);
+        // Look up the user's existing request (if any)
+        const { data: req } = await supabase
+          .from('community_join_requests')
+          .select('id, room_id, user_id, status, message, reject_reason, requested_at')
+          .eq('room_id', roomRow.id)
+          .eq('user_id', user.id)
+          .maybeSingle<JoinRequest>();
+        if (req) setJoinRequest(req);
+        setLoading(false);
+        return;
+      }
       setError(hErr.message);
       setLoading(false);
       return;
@@ -264,6 +293,26 @@ export default function RoomDetailPage() {
       setRenaming(false);
     }
     setRenameBusy(false);
+  };
+
+  const handleRequestAccess = async () => {
+    if (!user || !room) return;
+    setSubmittingRequest(true);
+    const { data, error: err } = await supabase
+      .from('community_join_requests')
+      .insert({
+        room_id: room.id,
+        user_id: user.id,
+        message: joinNote.trim() || null,
+      })
+      .select('id, room_id, user_id, status, message, reject_reason, requested_at')
+      .single();
+    setSubmittingRequest(false);
+    if (err) {
+      alert('Failed to submit request: ' + err.message);
+      return;
+    }
+    setJoinRequest(data as JoinRequest);
   };
 
   const handleReportRoom = async () => {
@@ -494,6 +543,77 @@ export default function RoomDetailPage() {
     return (
       <div className="min-h-[calc(100vh-4rem)] bb-grid flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-[#888]" />
+      </div>
+    );
+  }
+  if (needsApproval && room) {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] bb-grid flex items-center justify-center p-4">
+        <div className="bb-card bg-white p-6 max-w-md w-full">
+          <Link href="/community" className="inline-flex items-center gap-1 text-xs font-bold text-[#555] hover:text-[#111] mb-4">
+            <ArrowLeft className="h-3.5 w-3.5" /> Back to community
+          </Link>
+
+          <div
+            className="flex items-end h-20 -mx-6 px-6 mb-4 border-y-[2px] border-[#111]"
+            style={{ backgroundColor: room.color, backgroundImage: 'repeating-linear-gradient(45deg, rgba(17,17,17,0.06) 0 4px, transparent 4px 12px)' }}
+          >
+            <span className="text-3xl drop-shadow-[2px_2px_0_#111]">{room.emoji}</span>
+            <h1 className="text-base font-black text-white ml-2 mb-1">{room.name}</h1>
+          </div>
+
+          {joinRequest?.status === 'pending' && (
+            <>
+              <p className="text-sm font-black text-[#111] mb-1">⏳ Request pending</p>
+              <p className="text-xs text-[#555] mb-3">
+                Your request to join this room is awaiting admin approval.
+                You&apos;ll be able to join once it&apos;s approved.
+              </p>
+              <p className="text-[10px] text-[#888]">
+                Requested {new Date(joinRequest.requested_at).toLocaleString()}
+              </p>
+            </>
+          )}
+
+          {joinRequest?.status === 'rejected' && (
+            <>
+              <p className="text-sm font-black text-[#FF3B3B] mb-1">❌ Request rejected</p>
+              {joinRequest.reject_reason && (
+                <p className="text-xs text-[#555] mb-3">
+                  <span className="font-bold">Reason:</span> {joinRequest.reject_reason}
+                </p>
+              )}
+              <p className="text-[11px] text-[#888]">
+                Contact the admin if you think this is a mistake.
+              </p>
+            </>
+          )}
+
+          {!joinRequest && (
+            <>
+              <p className="text-sm font-black text-[#111] mb-1">🔒 This room requires admin approval</p>
+              <p className="text-xs text-[#555] mb-4">{room.description}</p>
+              <label className="block text-[10px] font-black text-[#111] mb-1 uppercase tracking-wider">
+                Why do you want to join? <span className="font-medium text-[#888]">(optional)</span>
+              </label>
+              <textarea
+                value={joinNote}
+                onChange={(e) => setJoinNote(e.target.value)}
+                placeholder="Helps admins approve faster..."
+                rows={3}
+                maxLength={300}
+                className="w-full rounded-xl border-[2px] border-[#111] px-3 py-2 text-xs shadow-[2px_2px_0_#111] focus:outline-none mb-3 resize-none"
+              />
+              <button
+                onClick={handleRequestAccess}
+                disabled={submittingRequest}
+                className="w-full flex items-center justify-center gap-2 rounded-xl border-[2px] border-[#111] bg-[#00D09C] py-2.5 text-sm font-black text-white shadow-[3px_3px_0_#111] hover:shadow-[1px_1px_0_#111] hover:translate-x-[1px] hover:translate-y-[1px] disabled:opacity-50 transition-all"
+              >
+                {submittingRequest ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Request access'}
+              </button>
+            </>
+          )}
+        </div>
       </div>
     );
   }

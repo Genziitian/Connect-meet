@@ -24,6 +24,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <AdminNavLink href="/admin/tickets" label="Tickets" icon={LifeBuoy} />
           <AdminNavLink href="/admin/community" label="Community" icon={MessagesSquare} />
           <AdminNavLink href="/admin/community/requests" label="Room Requests" icon={Inbox } />
+          <AdminNavLink href="/admin/community/join-requests" label="Join Requests" icon={Inbox } />
           <AdminNavLink href="/admin/users" label="Users" icon={Users} />
         </nav>
 

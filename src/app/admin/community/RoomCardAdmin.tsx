@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
-import { Power, Loader2, ExternalLink, Pin, PinOff } from 'lucide-react';
+import { Power, Loader2, ExternalLink, Pin, PinOff, Lock, Unlock } from 'lucide-react';
 
 interface Props {
   id: string;
@@ -14,19 +14,22 @@ interface Props {
   description: string | null;
   isActive: boolean;
   isPinned: boolean;
+  requiresApproval: boolean;
 }
 
-export default function RoomCardAdmin({ id, slug, name, description, isActive, isPinned }: Props) {
+export default function RoomCardAdmin({ id, slug, name, description, isActive, isPinned, requiresApproval }: Props) {
   const { user } = useAuth();
   const router = useRouter();
   const [, startTransition] = useTransition();
-  const [busy, setBusy] = useState<null | 'toggle' | 'pin'>(null);
+  const [busy, setBusy] = useState<null | 'toggle' | 'pin' | 'approval'>(null);
 
   // Local optimistic mirrors of props
   const [localActive, setLocalActive] = useState(isActive);
   const [localPinned, setLocalPinned] = useState(isPinned);
+  const [localApproval, setLocalApproval] = useState(requiresApproval);
   useEffect(() => setLocalActive(isActive), [isActive]);
   useEffect(() => setLocalPinned(isPinned), [isPinned]);
+  useEffect(() => setLocalApproval(requiresApproval), [requiresApproval]);
 
   const toggle = async () => {
     if (!user) return;
@@ -55,6 +58,30 @@ export default function RoomCardAdmin({ id, slug, name, description, isActive, i
         target_room_id: id,
       })
       .then(() => {});
+    setBusy(null);
+    startTransition(() => router.refresh());
+  };
+
+  const toggleApproval = async () => {
+    if (!user) return;
+    const next = !localApproval;
+    setLocalApproval(next);
+    setBusy('approval');
+    const { error } = await supabase
+      .from('community_rooms')
+      .update({ requires_approval: next })
+      .eq('id', id);
+    if (error) {
+      setLocalApproval(!next);
+      alert('Failed: ' + error.message);
+      setBusy(null);
+      return;
+    }
+    supabase.from('moderation_actions').insert({
+      actor_id: user.id,
+      action: next ? 'require_approval_room' : 'open_room',
+      target_room_id: id,
+    }).then(() => {});
     setBusy(null);
     startTransition(() => router.refresh());
   };
@@ -106,6 +133,11 @@ export default function RoomCardAdmin({ id, slug, name, description, isActive, i
               pinned
             </span>
           )}
+          {localApproval && (
+            <span className="text-[9px] font-bold uppercase rounded px-2 py-0.5 bg-[#FB923C]/15 text-[#FB923C]">
+              approval
+            </span>
+          )}
           <span
             className={`text-[9px] font-bold uppercase rounded px-2 py-0.5 ${
               localActive ? 'bg-[#00D09C]/15 text-[#00875A]' : 'bg-[#888]/15 text-[#555]'
@@ -125,6 +157,22 @@ export default function RoomCardAdmin({ id, slug, name, description, isActive, i
         >
           <ExternalLink className="h-3 w-3" /> Open
         </Link>
+        <button
+          onClick={toggleApproval}
+          disabled={busy !== null}
+          title={localApproval ? 'Open room (anyone can join)' : 'Require admin approval to join'}
+          className={`flex items-center justify-center gap-1 rounded-lg border-[2px] border-[#111] px-2 py-1.5 text-[10px] font-black text-white shadow-[2px_2px_0_#111] hover:shadow-[1px_1px_0_#111] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0_#111] disabled:opacity-60 transition-all ${
+            localApproval ? 'bg-[#FB923C]' : 'bg-[#888]'
+          }`}
+        >
+          {busy === 'approval' ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : localApproval ? (
+            <Lock className="h-3 w-3" />
+          ) : (
+            <Unlock className="h-3 w-3" />
+          )}
+        </button>
         <button
           onClick={togglePin}
           disabled={busy !== null}

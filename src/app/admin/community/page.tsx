@@ -13,19 +13,24 @@ interface RoomRow {
   description: string | null;
   is_active: boolean;
   is_pinned: boolean;
+  requires_approval: boolean;
   status: 'pending' | 'approved' | 'rejected';
 }
 
 export default async function AdminCommunityPage() {
   const db = getAdminDb();
-  const [{ data: rooms }, { count: pendingCount }] = await Promise.all([
+  const [{ data: rooms }, { count: pendingCount }, { count: joinReqCount }] = await Promise.all([
     db
       .from('community_rooms')
-      .select('id, slug, name, description, is_active, is_pinned, status')
+      .select('id, slug, name, description, is_active, is_pinned, requires_approval, status')
       .order('is_pinned', { ascending: false })
       .order('created_at', { ascending: true }),
     db
       .from('community_rooms')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'pending'),
+    db
+      .from('community_join_requests')
       .select('id', { count: 'exact', head: true })
       .eq('status', 'pending'),
   ]);
@@ -49,7 +54,30 @@ export default async function AdminCommunityPage() {
         </Link>
       </div>
 
-      {/* Pending requests banner */}
+      {/* Join requests (students wanting to enter a locked room) */}
+      <Link
+        href="/admin/community/join-requests"
+        className="bb-card bg-[#FBBF24]/20 border-[#FBBF24] flex items-center justify-between p-4 hover:bg-[#FBBF24]/35 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#FBBF24] border-[2px] border-[#111]">
+            <Inbox className="h-4 w-4 text-[#111]" />
+          </div>
+          <div>
+            <p className="text-sm font-black text-[#111]">
+              {(joinReqCount ?? 0) > 0 ? (
+                <>{joinReqCount} pending join {joinReqCount === 1 ? 'request' : 'requests'}</>
+              ) : (
+                <>No pending join requests</>
+              )}
+            </p>
+            <p className="text-xs text-[#555]">Students waiting to enter approval-required rooms</p>
+          </div>
+        </div>
+        <ArrowRight className="h-4 w-4 text-[#555]" />
+      </Link>
+
+      {/* Pending room creation requests banner */}
       <Link
         href="/admin/community/requests"
         className="bb-card bg-[#FB923C]/15 border-[#FB923C] flex items-center justify-between p-4 hover:bg-[#FB923C]/25 transition-colors"
@@ -82,6 +110,7 @@ export default async function AdminCommunityPage() {
             description={r.description}
             isActive={r.is_active}
             isPinned={r.is_pinned}
+            requiresApproval={r.requires_approval}
           />
         ))}
       </div>
