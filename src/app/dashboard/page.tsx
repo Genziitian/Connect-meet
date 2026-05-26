@@ -155,53 +155,6 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Get Help — Support + Community */}
-            <div className="bb-card bg-white p-6">
-              <h2 className="text-lg font-black text-[#111] mb-4 flex items-center gap-2">
-                <LifeBuoy className="h-5 w-5 text-[#FB923C]" />
-                Get Help & Community
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Link
-                  href="/support"
-                  className="group rounded-xl border-[2px] border-[#111] bg-[#FDEBD3] p-5 shadow-[3px_3px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
-                >
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FB923C] border-[2px] border-[#111]">
-                      <LifeBuoy className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-sm text-[#111]">Support Tickets</p>
-                      <p className="text-xs text-[#888]">Chat directly with our team</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-[#FB923C] font-semibold">Raise an issue</span>
-                    <ArrowRight className="h-4 w-4 text-[#888] group-hover:text-[#FB923C] transition-colors" />
-                  </div>
-                </Link>
-
-                <Link
-                  href="/community"
-                  className="group rounded-xl border-[2px] border-[#111] bg-[#FDEBD3] p-5 shadow-[3px_3px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
-                >
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#B794F6] border-[2px] border-[#111]">
-                      <Users className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-sm text-[#111]">Community Rooms</p>
-                      <p className="text-xs text-[#888]">Open chat with all students</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-[#B794F6] font-semibold">Coming soon</span>
-                    <ArrowRight className="h-4 w-4 text-[#888] group-hover:text-[#B794F6] transition-colors" />
-                  </div>
-                </Link>
-              </div>
-            </div>
-
             {/* Need help / Support */}
             <div className="bb-card bg-white p-6">
               <h2 className="text-lg font-black text-[#111] mb-4 flex items-center gap-2">
