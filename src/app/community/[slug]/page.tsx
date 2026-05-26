@@ -10,8 +10,8 @@ import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
 import EmojiPicker from '@/components/EmojiPicker';
 import {
-  ArrowLeft, Send, Bell, Flag, Smile, ImageIcon, Loader2, Users, LogOut, Trash2,
-  Pin, PinOff, UserX, Power, X as XIcon,
+  ArrowLeft, Send, Flag, Smile, ImageIcon, Loader2, Users, LogOut, Trash2,
+  Pin, PinOff, UserX, Power, X as XIcon, Reply, Edit3, Check,
 } from 'lucide-react';
 
 const MAX_IMAGE_BYTES = 200 * 1024; // 200 KB
@@ -37,6 +37,9 @@ interface RoomMessage {
   image_url: string | null;
   is_deleted: boolean;
   is_pinned: boolean;
+  reply_to_id: string | null;
+  reply_to_handle: string | null;
+  reply_to_excerpt: string | null;
   created_at: string;
 }
 
@@ -64,6 +67,10 @@ export default function RoomDetailPage() {
   const [pendingImage, setPendingImage] = useState<File | null>(null);
   const [pendingImagePreview, setPendingImagePreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<RoomMessage | null>(null);
+  const [renaming, setRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState('');
+  const [renameBusy, setRenameBusy] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -114,7 +121,7 @@ export default function RoomDetailPage() {
     // Load last 100 messages
     const { data: msgs } = await supabase
       .from('community_messages')
-      .select('id, room_id, user_id, handle, body, image_url, is_deleted, is_pinned, created_at')
+      .select('id, room_id, user_id, handle, body, image_url, is_deleted, is_pinned, reply_to_id, reply_to_handle, reply_to_excerpt, created_at')
       .eq('room_id', roomRow.id)
       .eq('is_deleted', false)
       .order('created_at', { ascending: true })
@@ -214,6 +221,9 @@ export default function RoomDetailPage() {
       handle: myHandle,
       body: input.trim(),
       image_url: imageUrl,
+      reply_to_id: replyingTo?.id || null,
+      reply_to_handle: replyingTo?.handle || null,
+      reply_to_excerpt: replyingTo ? replyingTo.body.slice(0, 200) : null,
     });
 
     if (err) {
@@ -221,8 +231,73 @@ export default function RoomDetailPage() {
     } else {
       setInput('');
       clearPendingImage();
+      setReplyingTo(null);
     }
     setSending(false);
+  };
+
+  const handleAdminRenameRoom = async () => {
+    if (user?.role !== 'admin' || !room) return;
+    const name = renameValue.trim();
+    if (name.length < 2) {
+      alert('Name must be at least 2 characters.');
+      return;
+    }
+    setRenameBusy(true);
+    // Optimistic
+    setRoom({ ...room, name });
+    const { error: err } = await supabase
+      .from('community_rooms')
+      .update({ name })
+      .eq('id', room.id);
+    if (err) {
+      // Revert
+      setRoom({ ...room, name: room.name });
+      alert('Rename failed: ' + err.message);
+    } else {
+      supabase.from('moderation_actions').insert({
+        actor_id: user.id,
+        action: 'rename_room',
+        target_room_id: room.id,
+        metadata: { new_name: name },
+      }).then(() => {});
+      setRenaming(false);
+    }
+    setRenameBusy(false);
+  };
+
+  const handleReportRoom = async () => {
+    if (!user || !room) return;
+    const reason = window.prompt(
+      `Report room "${room.name}"?\n\nReason (harassment / spam / hate_speech / nudity / other):`,
+      'other'
+    );
+    if (!reason) return;
+    const validReasons = ['harassment', 'spam', 'hate_speech', 'nudity', 'impersonation', 'other'];
+    const cleaned = validReasons.includes(reason.trim()) ? reason.trim() : 'other';
+    const note = window.prompt('Additional details (optional):') || '';
+
+    // Store as a moderation_action so admins see it on the dashboard
+    const { error: err } = await supabase.from('moderation_actions').insert({
+      actor_id: user.id,
+      action: 'report_room',
+      target_room_id: room.id,
+      reason: cleaned,
+      metadata: { note, room_name: room.name, room_slug: room.slug },
+    });
+    if (err) {
+      alert('Failed to submit report: ' + err.message);
+    } else {
+      alert('Report submitted. Our team will review the room.');
+    }
+  };
+
+  const scrollToMessage = (id: string) => {
+    const el = document.getElementById(`msg-${id}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.classList.add('ring-2', 'ring-[#00D09C]');
+    setTimeout(() => el.classList.remove('ring-2', 'ring-[#00D09C]'), 1500);
   };
 
   const clearPendingImage = () => {
@@ -453,8 +528,51 @@ export default function RoomDetailPage() {
               <ArrowLeft className="h-3.5 w-3.5" />
             </Link>
             <span className="text-2xl sm:text-3xl drop-shadow-[2px_2px_0_#111]">{room.emoji}</span>
-            <div className="min-w-0">
-              <h1 className="text-sm sm:text-lg font-black text-white truncate">{room.name}</h1>
+            <div className="min-w-0 flex-1">
+              {renaming && user?.role === 'admin' ? (
+                <div className="flex items-center gap-1.5">
+                  <input
+                    autoFocus
+                    value={renameValue}
+                    onChange={(e) => setRenameValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleAdminRenameRoom();
+                      if (e.key === 'Escape') setRenaming(false);
+                    }}
+                    className="flex-1 rounded-lg border-[2px] border-[#111] bg-white px-2 py-1 text-sm sm:text-base font-black text-[#111] shadow-[2px_2px_0_#111] focus:outline-none"
+                    maxLength={120}
+                  />
+                  <button
+                    onClick={handleAdminRenameRoom}
+                    disabled={renameBusy}
+                    className="flex h-7 w-7 items-center justify-center rounded-md border-[2px] border-[#111] bg-[#00D09C] text-white shadow-[2px_2px_0_#111] disabled:opacity-50"
+                  >
+                    {renameBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                  </button>
+                  <button
+                    onClick={() => setRenaming(false)}
+                    className="flex h-7 w-7 items-center justify-center rounded-md border-[2px] border-[#111] bg-white shadow-[2px_2px_0_#111]"
+                  >
+                    <XIcon className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <h1 className="text-sm sm:text-lg font-black text-white truncate">{room.name}</h1>
+                  {user?.role === 'admin' && (
+                    <button
+                      onClick={() => {
+                        setRenameValue(room.name);
+                        setRenaming(true);
+                      }}
+                      title="Rename room (admin)"
+                      className="flex h-5 w-5 items-center justify-center rounded text-white/80 hover:bg-white/20 hover:text-white"
+                    >
+                      <Edit3 className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
+              )}
               <p className="text-[10px] sm:text-xs text-white/90 font-bold flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#FF3B3B] animate-pulse" />
                 LIVE · {members.length} online · {room.tagline}
@@ -462,10 +580,11 @@ export default function RoomDetailPage() {
             </div>
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">
-            <button className="hidden sm:flex items-center gap-1 rounded-lg border-[2px] border-[#111] bg-white px-2 py-1 text-[10px] font-black shadow-[2px_2px_0_#111]">
-              <Bell className="h-3 w-3" /> Notify
-            </button>
-            <button className="flex items-center gap-1 rounded-lg border-[2px] border-[#111] bg-[#FBBF24] px-2 py-1 text-[10px] font-black shadow-[2px_2px_0_#111]">
+            <button
+              onClick={handleReportRoom}
+              className="flex items-center gap-1 rounded-lg border-[2px] border-[#111] bg-[#FBBF24] px-2 py-1 text-[10px] font-black shadow-[2px_2px_0_#111] hover:shadow-[1px_1px_0_#111] active:translate-x-[1px] active:translate-y-[1px] transition-all"
+              title="Report this room"
+            >
               <Flag className="h-3 w-3" /> Report
             </button>
             {user?.role === 'admin' && (
@@ -519,80 +638,16 @@ export default function RoomDetailPage() {
           {messages.length === 0 ? (
             <p className="text-center text-xs text-[#888] py-8">No messages yet — be the first to say hi 👋</p>
           ) : (
-            messages.map((m) => {
-              const fromMe = m.user_id === user?.id;
-              const isHost = m.handle === room.host_alias;
-              const isAdmin = user?.role === 'admin';
-              return (
-                <div key={m.id} className="group flex items-start gap-2 sm:gap-3 mt-3">
-                  <Avatar handle={m.handle} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[11px] font-bold mb-0.5 flex items-center gap-1.5 flex-wrap">
-                      <span className="text-[#111]">{fromMe ? `${m.handle} (you)` : m.handle}</span>
-                      {isHost && (
-                        <span className="rounded-full bg-[#FF6B6B] border border-[#111] px-1.5 py-px text-[8px] font-black uppercase text-white">
-                          Host
-                        </span>
-                      )}
-                      <span className="text-[#888] font-medium">{formatTime(m.created_at)}</span>
-                    </p>
-                    {m.body && (
-                      <p className="text-xs sm:text-sm text-[#111] whitespace-pre-wrap break-words leading-snug">
-                        {m.body}
-                      </p>
-                    )}
-                    {m.image_url && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={m.image_url}
-                        alt=""
-                        className="mt-1 max-h-60 max-w-[260px] rounded-xl border-[2px] border-[#111] shadow-[2px_2px_0_#111] object-contain bg-white"
-                        loading="lazy"
-                      />
-                    )}
-                  </div>
-                  <div className={`flex flex-col gap-1 ${fromMe && !isAdmin ? 'hidden' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
-                    {!fromMe && (
-                      <button
-                        onClick={() => handleFlagMessage(m)}
-                        title="Report this message"
-                        className="flex h-6 w-6 items-center justify-center rounded-md bg-[#FBBF24]/40 hover:bg-[#FBBF24] border border-[#111]"
-                      >
-                        <Flag className="h-3 w-3" />
-                      </button>
-                    )}
-                    {isAdmin && (
-                      <>
-                        <button
-                          onClick={() => handleAdminPinMessage(m)}
-                          title={m.is_pinned ? 'Unpin' : 'Pin to top'}
-                          className={`flex h-6 w-6 items-center justify-center rounded-md border border-[#111] ${m.is_pinned ? 'bg-[#00D09C] text-white' : 'bg-[#00D09C]/40 hover:bg-[#00D09C] hover:text-white'}`}
-                        >
-                          {m.is_pinned ? <PinOff className="h-3 w-3" /> : <Pin className="h-3 w-3" />}
-                        </button>
-                        {!fromMe && (
-                          <>
-                            <button
-                              onClick={() => handleAdminBanUser(m.user_id, m.handle)}
-                              title="Ban user (admin)"
-                              className="flex h-6 w-6 items-center justify-center rounded-md bg-[#B794F6]/40 hover:bg-[#B794F6] hover:text-white border border-[#111]"
-                            >
-                              <UserX className="h-3 w-3" />
-                            </button>
-                            <button
-                              onClick={() => handleAdminDeleteMessage(m)}
-                              title="Delete (admin)"
-                              className="flex h-6 w-6 items-center justify-center rounded-md bg-[#FF3B3B]/40 hover:bg-[#FF3B3B] hover:text-white border border-[#111]"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </button>
-                          </>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </div>
-              );
+            renderMessagesWithDateSeparators(messages, user?.id, user?.role, room.host_alias, {
+              onReply: (m) => {
+                setReplyingTo(m);
+                requestAnimationFrame(() => inputRef.current?.focus());
+              },
+              onFlag: handleFlagMessage,
+              onPin: handleAdminPinMessage,
+              onDelete: handleAdminDeleteMessage,
+              onBan: handleAdminBanUser,
+              onScrollToParent: scrollToMessage,
             })
           )}
         </div>
@@ -605,6 +660,29 @@ export default function RoomDetailPage() {
 
         {/* Composer */}
         <div className="bg-white border-t-[2px] border-[#111]">
+          {/* Reply banner */}
+          {replyingTo && (
+            <div className="px-3 pt-2 pb-1 flex items-center gap-2 border-b border-[#eee] bg-[#00D09C]/10">
+              <Reply className="h-3.5 w-3.5 text-[#00875A] flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-black text-[#00875A]">
+                  Replying to <span className="text-[#111]">{replyingTo.handle}</span>
+                </p>
+                <p className="text-[11px] text-[#555] truncate">
+                  {replyingTo.body || (replyingTo.image_url ? '📷 Image' : '...')}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setReplyingTo(null)}
+                className="flex h-7 w-7 items-center justify-center rounded-lg border-[2px] border-[#111] bg-white text-[#888] shadow-[2px_2px_0_#111]"
+                title="Cancel reply"
+              >
+                <XIcon className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+
           {/* Pending image preview */}
           {pendingImagePreview && (
             <div className="px-3 pt-2 pb-1 border-b border-[#eee] flex items-center gap-3">
@@ -805,4 +883,160 @@ function hashStr(s: string): number {
 
 function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function formatDateLabel(d: Date): string {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(d);
+  target.setHours(0, 0, 0, 0);
+  const diffDays = Math.round((today.getTime() - target.getTime()) / 86400000);
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) {
+    return target.toLocaleDateString([], { weekday: 'long' });
+  }
+  return target.toLocaleDateString([], { month: 'short', day: 'numeric', year: target.getFullYear() === today.getFullYear() ? undefined : 'numeric' });
+}
+
+interface MessageHandlers {
+  onReply: (m: RoomMessage) => void;
+  onFlag: (m: RoomMessage) => void;
+  onPin: (m: RoomMessage) => void;
+  onDelete: (m: RoomMessage) => void;
+  onBan: (userId: string, handle: string) => void;
+  onScrollToParent: (id: string) => void;
+}
+
+function renderMessagesWithDateSeparators(
+  messages: RoomMessage[],
+  currentUserId: string | undefined,
+  currentRole: string | undefined,
+  hostAlias: string,
+  handlers: MessageHandlers
+) {
+  const nodes: React.ReactNode[] = [];
+  let lastDateKey = '';
+
+  for (const m of messages) {
+    const d = new Date(m.created_at);
+    const key = d.toDateString();
+    if (key !== lastDateKey) {
+      nodes.push(
+        <div key={`sep-${key}`} className="flex items-center gap-2 my-4">
+          <div className="h-px flex-1 bg-[#111]/15" />
+          <span className="rounded-full border-[2px] border-[#111] bg-white px-3 py-0.5 text-[10px] font-black text-[#111] shadow-[2px_2px_0_#111]">
+            {formatDateLabel(d)}
+          </span>
+          <div className="h-px flex-1 bg-[#111]/15" />
+        </div>
+      );
+      lastDateKey = key;
+    }
+
+    const fromMe = m.user_id === currentUserId;
+    const isHost = m.handle === hostAlias;
+    const isAdmin = currentRole === 'admin';
+
+    nodes.push(
+      <div
+        key={m.id}
+        id={`msg-${m.id}`}
+        className="group flex items-start gap-2 sm:gap-3 mt-3 rounded-lg transition-shadow"
+      >
+        <Avatar handle={m.handle} />
+        <div className="flex-1 min-w-0">
+          <p className="text-[11px] font-bold mb-0.5 flex items-center gap-1.5 flex-wrap">
+            <span className="text-[#111]">{fromMe ? `${m.handle} (you)` : m.handle}</span>
+            {isHost && (
+              <span className="rounded-full bg-[#FF6B6B] border border-[#111] px-1.5 py-px text-[8px] font-black uppercase text-white">
+                Host
+              </span>
+            )}
+            <span className="text-[#888] font-medium">{formatTime(m.created_at)}</span>
+          </p>
+
+          {/* Reply context */}
+          {m.reply_to_id && (
+            <button
+              type="button"
+              onClick={() => handlers.onScrollToParent(m.reply_to_id!)}
+              className="block w-full text-left mb-1 rounded-lg border-l-[3px] border-[#00D09C] bg-white/70 px-2 py-1 hover:bg-white"
+            >
+              <p className="text-[10px] font-black text-[#00875A] flex items-center gap-1">
+                <Reply className="h-2.5 w-2.5" />
+                Replying to {m.reply_to_handle}
+              </p>
+              <p className="text-[11px] text-[#555] truncate">{m.reply_to_excerpt}</p>
+            </button>
+          )}
+
+          {m.body && (
+            <p className="text-xs sm:text-sm text-[#111] whitespace-pre-wrap break-words leading-snug">
+              {m.body}
+            </p>
+          )}
+          {m.image_url && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={m.image_url}
+              alt=""
+              className="mt-1 max-h-60 max-w-[260px] rounded-xl border-[2px] border-[#111] shadow-[2px_2px_0_#111] object-contain bg-white"
+              loading="lazy"
+            />
+          )}
+        </div>
+
+        <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          {/* Reply — anyone can reply to any message */}
+          <button
+            onClick={() => handlers.onReply(m)}
+            title="Reply"
+            className="flex h-6 w-6 items-center justify-center rounded-md bg-[#00D09C]/40 hover:bg-[#00D09C] hover:text-white border border-[#111]"
+          >
+            <Reply className="h-3 w-3" />
+          </button>
+          {!fromMe && (
+            <button
+              onClick={() => handlers.onFlag(m)}
+              title="Report this message"
+              className="flex h-6 w-6 items-center justify-center rounded-md bg-[#FBBF24]/40 hover:bg-[#FBBF24] border border-[#111]"
+            >
+              <Flag className="h-3 w-3" />
+            </button>
+          )}
+          {isAdmin && (
+            <>
+              <button
+                onClick={() => handlers.onPin(m)}
+                title={m.is_pinned ? 'Unpin' : 'Pin to top'}
+                className={`flex h-6 w-6 items-center justify-center rounded-md border border-[#111] ${m.is_pinned ? 'bg-[#00D09C] text-white' : 'bg-[#00D09C]/40 hover:bg-[#00D09C] hover:text-white'}`}
+              >
+                {m.is_pinned ? <PinOff className="h-3 w-3" /> : <Pin className="h-3 w-3" />}
+              </button>
+              {!fromMe && (
+                <>
+                  <button
+                    onClick={() => handlers.onBan(m.user_id, m.handle)}
+                    title="Ban user (admin)"
+                    className="flex h-6 w-6 items-center justify-center rounded-md bg-[#B794F6]/40 hover:bg-[#B794F6] hover:text-white border border-[#111]"
+                  >
+                    <UserX className="h-3 w-3" />
+                  </button>
+                  <button
+                    onClick={() => handlers.onDelete(m)}
+                    title="Delete (admin)"
+                    className="flex h-6 w-6 items-center justify-center rounded-md bg-[#FF3B3B]/40 hover:bg-[#FF3B3B] hover:text-white border border-[#111]"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+  return nodes;
 }
