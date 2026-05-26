@@ -1044,8 +1044,11 @@ export default function ConnectPage() {
         'flex flex-col',
         isFullscreen ? 'h-screen' : 'h-[calc(100vh-4rem)]'
       )}>
-        {/* Chat header — refined per mockup */}
-        <div className="flex items-center justify-between border-b-[3px] border-[#111] bg-white px-3 sm:px-4 py-2.5 sm:py-3">
+        {/* Chat header — refined per mockup. Hidden on mobile when in video mode (floating top bar replaces it) */}
+        <div className={cn(
+          'flex items-center justify-between border-b-[3px] border-[#111] bg-white px-3 sm:px-4 py-2.5 sm:py-3',
+          mode === 'video' && 'hidden md:flex'
+        )}>
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             {/* Avatar circle with peer initial */}
             <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-[#B794F6] border-[2px] border-[#111] flex-shrink-0">
@@ -1112,13 +1115,27 @@ export default function ConnectPage() {
           'flex-1 flex overflow-hidden',
           mode === 'video' ? 'flex-col md:flex-row' : 'flex-col'
         )}>
-          {/* Video section (if video mode) */}
+          {/* Video section (if video mode) — mobile: fullscreen + PiP, desktop: side-by-side */}
           {mode === 'video' && (
-            <div className="flex flex-col md:flex-1 bg-[#111] md:border-r-[3px] border-[#111]">
-              {/* Videos: vertical stack on mobile, side-by-side on sm+ */}
-              <div className="flex flex-col sm:flex-row gap-2 p-2 flex-1 min-h-0">
-                {/* Remote video (peer) */}
-                <div className="relative flex-1 rounded-xl bg-[#1a1a2e] border-[2px] border-[#333] overflow-hidden min-h-[140px] sm:min-h-[180px]">
+            <div className="relative flex flex-col md:flex-1 bg-[#111] md:border-r-[3px] border-[#111]">
+              {/* MOBILE: top bar (LIVE pill + Skip) */}
+              <div className="md:hidden absolute top-3 left-3 right-3 z-20 flex items-center justify-between gap-2 pointer-events-none">
+                <div className="inline-flex items-center gap-1.5 rounded-full border-[2px] border-[#111] bg-[#FF3B3B] px-2.5 py-1 text-[10px] font-black text-white shadow-[2px_2px_0_#111]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+                  LIVE · {fmtTime(elapsed)}{filters.topic ? ` · #${filters.topic}` : ''}
+                </div>
+                <button
+                  onClick={handleSkip}
+                  className="pointer-events-auto inline-flex items-center gap-1 rounded-lg border-[2px] border-[#111] bg-[#FB923C] px-2.5 py-1 text-[10px] font-black text-white shadow-[2px_2px_0_#111] active:translate-x-[1px] active:translate-y-[1px]"
+                >
+                  <SkipForward className="h-3 w-3" /> Skip
+                </button>
+              </div>
+
+              {/* Video container — mobile uses absolute positioning */}
+              <div className="relative flex flex-col sm:flex-row md:flex-row gap-2 p-2 md:p-2 flex-1 min-h-0">
+                {/* Remote video (peer) — mobile: fills entire mobile section */}
+                <div className="relative flex-1 md:rounded-xl bg-[#1a1a2e] border-0 md:border-[2px] md:border-[#333] overflow-hidden min-h-[140px] sm:min-h-[180px] max-md:absolute max-md:inset-0 max-md:z-0">
                   <video
                     ref={remoteVideoRef}
                     autoPlay
@@ -1132,13 +1149,14 @@ export default function ConnectPage() {
                       <p className="text-[10px] text-white/30 mt-1 animate-pulse">Connecting video...</p>
                     </div>
                   )}
-                  <div className="absolute top-2 left-2 rounded-full bg-[#00D09C] px-2 py-0.5 text-[10px] text-white font-bold border-[2px] border-[#111]">
+                  {/* Peer name pill — hidden on mobile (the top LIVE bar covers branding) */}
+                  <div className="hidden md:block absolute top-2 left-2 rounded-full bg-[#00D09C] px-2 py-0.5 text-[10px] text-white font-bold border-[2px] border-[#111]">
                     {peerName}
                   </div>
                 </div>
 
-                {/* Local video (you) */}
-                <div className="relative flex-1 rounded-xl bg-[#1a1a2e] border-[2px] border-[#333] overflow-hidden min-h-[140px] sm:min-h-[180px]">
+                {/* Local video (you) — mobile: PiP top-right */}
+                <div className="relative flex-1 md:rounded-xl bg-[#1a1a2e] border-0 md:border-[2px] md:border-[#333] overflow-hidden min-h-[140px] sm:min-h-[180px] max-md:absolute max-md:top-12 max-md:right-3 max-md:w-28 max-md:h-40 max-md:min-h-0 max-md:z-10 max-md:rounded-xl max-md:border-[2px] max-md:border-[#00D09C] max-md:shadow-[3px_3px_0_#111]">
                   {cameraReady ? (
                     <>
                       <video
@@ -1150,26 +1168,67 @@ export default function ConnectPage() {
                         style={{ transform: 'scaleX(-1)' }}
                       />
                       {isVideoOff && (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center">
-                          <VideoOff className="h-8 w-8 text-white/30 mb-2" />
-                          <p className="text-xs text-white/50">Camera Off</p>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black">
+                          <VideoOff className="h-6 w-6 sm:h-8 sm:w-8 text-white/30 mb-1 sm:mb-2" />
+                          <p className="text-[10px] sm:text-xs text-white/50">Camera Off</p>
                         </div>
                       )}
                     </>
                   ) : (
                     <div className="flex flex-col items-center justify-center h-full">
-                      <User className="h-10 w-10 sm:h-12 sm:w-12 text-white/20 mb-2" />
-                      <p className="text-xs text-white/50">Your Camera</p>
+                      <User className="h-8 w-8 sm:h-12 sm:w-12 text-white/20 mb-1 sm:mb-2" />
+                      <p className="text-[10px] sm:text-xs text-white/50">Camera</p>
                     </div>
                   )}
-                  <div className="absolute top-2 left-2 rounded-full bg-[#00D09C] px-2 py-0.5 text-[10px] text-white font-bold border-[2px] border-[#111]">
+                  <div className="absolute top-1 left-1 md:top-2 md:left-2 rounded-full bg-[#00D09C] px-1.5 md:px-2 py-0.5 text-[8px] md:text-[10px] text-white font-bold border-[1.5px] md:border-[2px] border-[#111]">
                     You
                   </div>
                 </div>
               </div>
 
-              {/* Video controls bar */}
-              <div className="flex items-center justify-center gap-3 px-3 py-2 border-t border-[#333] bg-[#0a0a15]">
+              {/* MOBILE: caption strip — latest peer message */}
+              {(() => {
+                const lastPeer = [...messages].reverse().find((m) => m.senderId === 'peer' && m.type === 'text');
+                if (!lastPeer) return null;
+                return (
+                  <div className="md:hidden absolute bottom-28 left-3 right-3 z-20 rounded-xl border-[2px] border-white/30 bg-black/65 backdrop-blur px-3 py-1.5 pointer-events-none">
+                    <p className="text-xs text-white font-medium text-center line-clamp-2">
+                      &ldquo;{lastPeer.content}&rdquo;
+                    </p>
+                  </div>
+                );
+              })()}
+
+              {/* MOBILE: latest sent message pill (with badge) */}
+              {(() => {
+                const lastSelf = [...messages].reverse().find((m) => m.senderId === 'self' && m.type === 'text');
+                if (!lastSelf) return null;
+                return (
+                  <div className="md:hidden absolute bottom-20 left-3 right-3 z-20 flex items-center gap-2 rounded-xl border-[2px] border-[#111] bg-white px-3 py-1.5 shadow-[2px_2px_0_#111]">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#00D09C] flex-shrink-0">
+                      <span className="text-[9px] font-black text-white">You</span>
+                    </div>
+                    <p className="text-xs text-[#111] font-medium flex-1 truncate">{lastSelf.content}</p>
+                  </div>
+                );
+              })()}
+
+              {/* MOBILE: floating bottom controls (5 circle buttons) */}
+              <div className="md:hidden absolute bottom-3 left-0 right-0 z-30 flex items-center justify-center gap-2 px-3">
+                <FloatBtn onClick={toggleMute} active={isMuted} color="white" Icon={isMuted ? MicOff : Mic} />
+                <FloatBtn onClick={toggleVideo} active={isVideoOff} color="white" Icon={isVideoOff ? VideoOff : VideoIcon} />
+                <FloatBtn
+                  onClick={() => setMobileChatOpen(!mobileChatOpen)}
+                  active={mobileChatOpen}
+                  color="#B794F6"
+                  Icon={MessageCircle}
+                />
+                <FloatBtn onClick={() => setShowReport(true)} color="#FBBF24" Icon={Flag} />
+                <FloatBtn onClick={handleEndChat} color="#FF3B3B" Icon={X} />
+              </div>
+
+              {/* DESKTOP video controls bar (hidden on mobile) */}
+              <div className="hidden md:flex items-center justify-center gap-3 px-3 py-2 border-t border-[#333] bg-[#0a0a15]">
                 <button
                   onClick={toggleMute}
                   className={cn(
@@ -1187,17 +1246,6 @@ export default function ConnectPage() {
                   )}
                 >
                   {isVideoOff ? <VideoOff className="h-4 w-4" /> : <VideoIcon className="h-4 w-4" />}
-                </button>
-                {/* Mobile chat toggle */}
-                <button
-                  onClick={() => setMobileChatOpen(!mobileChatOpen)}
-                  className={cn(
-                    'rounded-full p-2.5 border-[2px] transition-colors md:hidden',
-                    mobileChatOpen ? 'bg-[#00D09C] border-[#00D09C] text-white' : 'bg-transparent border-[#555] text-white/70 hover:text-white'
-                  )}
-                  title="Toggle chat"
-                >
-                  <MessageCircle className="h-4 w-4" />
                 </button>
                 <button
                   onClick={handleEndChat}
@@ -1516,6 +1564,33 @@ function fmtTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+}
+
+// Floating circular control button — used in the mobile video overlay
+function FloatBtn({
+  onClick,
+  active,
+  color,
+  Icon,
+}: {
+  onClick: () => void;
+  active?: boolean;
+  color: string; // background colour when not active (or always for accent buttons)
+  Icon: React.ComponentType<{ className?: string }>;
+}) {
+  const isWhite = color === 'white';
+  return (
+    <button
+      onClick={onClick}
+      className="flex h-12 w-12 items-center justify-center rounded-full border-[3px] border-[#111] shadow-[3px_3px_0_#111] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0_#111] transition-all"
+      style={{
+        backgroundColor: active ? '#FF3B3B' : color,
+        color: active || !isWhite ? '#fff' : '#111',
+      }}
+    >
+      <Icon className="h-5 w-5" />
+    </button>
+  );
 }
 
 // ═══════════════════════════════════════════
