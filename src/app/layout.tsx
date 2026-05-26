@@ -35,7 +35,6 @@ export const metadata: Metadata = {
       { url: '/icons/favicon-96x96.png', sizes: '96x96', type: 'image/png' },
       { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
       { url: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
-      { url: '/icons/favicon.svg', type: 'image/svg+xml' },
     ],
     shortcut: '/favicon.ico',
     apple: [
@@ -49,12 +48,9 @@ export const metadata: Metadata = {
       { url: '/icons/apple-icon-152x152.png', sizes: '152x152', type: 'image/png' },
       { url: '/icons/apple-icon-180x180.png', sizes: '180x180', type: 'image/png' },
     ],
-    other: [
-      { rel: 'mask-icon', url: '/icons/favicon.svg', color: '#00D09C' },
-    ],
   },
   other: {
-    'msapplication-TileColor': '#00D09C',
+    'msapplication-TileColor': '#8B5CF6',
     'msapplication-TileImage': '/icons/ms-icon-144x144.png',
     'msapplication-config': '/icons/browserconfig.xml',
   },
@@ -83,7 +79,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#00D09C',
+  themeColor: '#8B5CF6',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
