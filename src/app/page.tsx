@@ -16,6 +16,8 @@ import {
   CheckCircle2,
   Star,
   Sparkles,
+  Hash,
+  ArrowRight,
 } from 'lucide-react';
 import { PLANS } from '@/lib/constants';
 import { formatINR } from '@/lib/utils';
@@ -306,14 +308,19 @@ export default function HomePage() {
                 },
                 {
                   bg: 'bg-[#B794F6]',
-                  title: 'Get Matched Instantly',
-                  desc: 'Our matching engine pairs you with another verified student. See someone who matches your study vibe? Start chatting.',
+                  title: 'Pick Your Mode',
+                  desc: 'Random 1-on-1 chat, video, or jump into a topic-based community room. Your call.',
                 },
-                       {
-                         bg: 'bg-[#FF6B6B]',
-                         title: 'Study Together',
-                         desc: 'Chat via text or video. Meet new people, share ideas, and connect in real time.',
-                       },
+                {
+                  bg: 'bg-[#FF6B6B]',
+                  title: 'Join a Community Room',
+                  desc: 'Find like-minded people in dedicated rooms — code, gym, late-night talks, course-specific groups. Anon handle per room.',
+                },
+                {
+                  bg: 'bg-[#FB923C]',
+                  title: 'Connect for Real',
+                  desc: 'Text, video, or group chat. Pin messages, reply to anyone, find your study partner. All anon by default.',
+                },
               ].map((step, i) => (
                 <div
                   key={i}
@@ -335,18 +342,171 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ══════════ COMMUNITY ROOMS SPOTLIGHT (NEW) ══════════ */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-[#FDEBD3]">
+        <div className="max-w-7xl mx-auto">
+          {/* Top header */}
+          <div className="text-center mb-14">
+            <div className="inline-flex items-center gap-1.5 rounded-full border-[2px] border-[#111] bg-[#FF6B6B] px-3 py-1 text-[10px] sm:text-xs font-black text-white shadow-[2px_2px_0px_#111] mb-5">
+              <Sparkles className="h-3 w-3" />
+              NEW · Community Rooms
+            </div>
+            <h2 className="text-5xl sm:text-6xl font-black leading-[1.05] tracking-tight">
+              Find your <span className="text-[#FF6B6B]">tribe</span>.<br />
+              Drop into a <span className="text-[#00D09C]">room</span>.
+            </h2>
+            <p className="mt-5 text-lg text-[#555] max-w-2xl mx-auto leading-relaxed">
+              Group chat rooms hosted by verified BS students. No followers, no algorithm — just real talk with people who get the same grind. Connect with <span className="font-black text-[#111]">like-minded people</span> over what you actually care about.
+            </p>
+          </div>
+
+          {/* Sample rooms grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-12">
+            {[
+              {
+                emoji: '🌙',
+                name: 'Late Night Lounge',
+                tagline: '#chill #vents #lofi',
+                desc: '11pm – 2am · chill talks, study breaks, vent posts.',
+                color: '#B794F6',
+                live: true,
+                online: 47,
+              },
+              {
+                emoji: '🎯',
+                name: 'JEE BS Survivors',
+                tagline: '#bs #1stYear #grind',
+                desc: '1st years adjusting to the BS Degree life. Tips, doubts, no shame.',
+                color: '#00D09C',
+                live: false,
+                online: 18,
+              },
+              {
+                emoji: '🎧',
+                name: 'Music & Lo-fi',
+                tagline: '#music #playlist #vibe',
+                desc: 'Share tracks, ask for recs, study to.',
+                color: '#FB923C',
+                live: false,
+                online: 12,
+              },
+              {
+                emoji: '💻',
+                name: 'Code & DSA',
+                tagline: '#code #dsa #leetcode',
+                desc: 'Stuck on a problem? Pair up. Share neat solutions.',
+                color: '#00D09C',
+                live: true,
+                online: 31,
+              },
+              {
+                emoji: '💪',
+                name: 'Gym Bros & Sis',
+                tagline: '#fitness #prs',
+                desc: 'PRs, programs, no judgment zone.',
+                color: '#FBBF24',
+                live: false,
+                online: 9,
+              },
+              {
+                emoji: '🚀',
+                name: 'Startup Talk',
+                tagline: '#startup #ideas',
+                desc: 'Pitch, critique, find co-founders.',
+                color: '#FF6B6B',
+                live: true,
+                online: 21,
+              },
+            ].map((room) => (
+              <div
+                key={room.name}
+                className="bg-white rounded-2xl border-[3px] border-[#111] shadow-[5px_5px_0px_#111] overflow-hidden hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[7px_7px_0px_#111] transition-all"
+              >
+                <div
+                  className="relative flex items-end h-24 p-4 border-b-[2px] border-[#111]"
+                  style={{
+                    backgroundColor: room.color,
+                    backgroundImage:
+                      'repeating-linear-gradient(45deg, rgba(17,17,17,0.06) 0 4px, transparent 4px 12px)',
+                  }}
+                >
+                  <div className="absolute top-2.5 right-2.5 inline-flex items-center gap-1.5 rounded-full border-[2px] border-[#111] bg-white/95 px-2 py-0.5 text-[10px] font-black">
+                    <span className={`h-1.5 w-1.5 rounded-full ${room.live ? 'bg-[#FF3B3B] animate-pulse' : 'bg-[#00D09C]'}`} />
+                    {room.live ? 'LIVE' : `${room.online} online`}
+                  </div>
+                  <div className="text-3xl drop-shadow-[2px_2px_0_#111]">{room.emoji}</div>
+                </div>
+                <div className="p-4">
+                  <p className="text-base font-black text-[#111] mb-1">{room.name}</p>
+                  <p className="text-xs text-[#555] mb-2 line-clamp-2">{room.desc}</p>
+                  <p className="text-[10px] font-bold text-[#888]">{room.tagline}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Feature row */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mt-14">
+            {[
+              {
+                icon: Hash,
+                title: 'Topic-based rooms',
+                desc: 'Anime, code, late-night vents, gym — there\'s a room for it. Or host your own.',
+                color: '#00D09C',
+              },
+              {
+                icon: Users,
+                title: 'Anon handle per room',
+                desc: 'You\'re Vortex-88 in one room, Marigold-21 in another. Privacy-first, vibe-based.',
+                color: '#B794F6',
+              },
+              {
+                icon: Shield,
+                title: 'Admin approval (optional)',
+                desc: 'Host a private course-specific room. Approve students before they join. Or keep it open.',
+                color: '#FF6B6B',
+              },
+            ].map((f) => (
+              <div
+                key={f.title}
+                className="bg-white rounded-2xl border-[3px] border-[#111] shadow-[4px_4px_0px_#111] p-6"
+              >
+                <div
+                  className="h-12 w-12 rounded-xl border-[2px] border-[#111] flex items-center justify-center mb-4"
+                  style={{ backgroundColor: f.color }}
+                >
+                  <f.icon className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="text-lg font-black mb-1">{f.title}</h3>
+                <p className="text-sm text-[#555] leading-relaxed">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* CTA */}
+          <div className="text-center mt-12">
+            <Link
+              href="/auth/login"
+              className="inline-flex items-center gap-2 bb-btn bb-btn-coral text-base sm:text-lg px-8 py-4"
+            >
+              Browse Community Rooms <ArrowRight className="h-5 w-5" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* ══════════ STATS ══════════ */}
       <section className="py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-5">
           {[
-            { value: '500+', label: 'Verified Students', bg: 'bg-white' },
+            { value: '500+', label: 'BS Students', bg: 'bg-white' },
             {
               value: '10K+',
               label: 'Chat Sessions',
               bg: 'bg-[#00D09C]',
               light: true,
             },
-            { value: '50+', label: 'Live Rooms', bg: 'bg-white' },
+            { value: '20+', label: 'Community Rooms', bg: 'bg-white' },
           ].map((stat, i) => (
             <div
               key={i}
@@ -413,11 +573,11 @@ export default function HomePage() {
                 color: 'bg-[#FB923C]',
               },
               {
-                icon: Users,
-                title: 'Verified Community',
-                desc: 'OTP verification reduces fake accounts and keeps chats authentic.',
-                badge: 'Safety',
-                color: 'bg-[#00D09C]',
+                icon: Hash,
+                title: 'Community Rooms',
+                desc: 'Topic-based group chats. Random anon handle per room. Find your tribe — late-night talks, code, anime, course rooms.',
+                badge: 'NEW',
+                color: 'bg-[#FF6B6B]',
               },
               {
                 icon: Sparkles,
