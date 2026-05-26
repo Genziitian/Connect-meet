@@ -174,8 +174,19 @@ export default function ConnectPage() {
         localStreamRef.current.getTracks().forEach((t) => t.stop());
       }
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
-        audio: true,
+        video: {
+          width: { ideal: 640, max: 854 },
+          height: { ideal: 360, max: 480 },
+          frameRate: { ideal: 24, max: 30 },
+          facingMode: 'user',
+        },
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: 48000,
+          channelCount: 1,
+        },
       });
       localStreamRef.current = stream;
       // Attach to video element — use rAF to ensure DOM is painted
@@ -221,16 +232,29 @@ export default function ConnectPage() {
   }, [stopCamera]);
 
   const createPeerConnection = useCallback((sid: string, socket: Socket) => {
-    // Reliable free STUN servers + configurable TURN for production
+    // Reliable free STUN + free public TURN (Open Relay by Metered)
     const iceServers: RTCIceServer[] = [
       { urls: 'stun:stun.l.google.com:19302' },
       { urls: 'stun:stun1.l.google.com:19302' },
-      { urls: 'stun:stun2.l.google.com:19302' },
-      { urls: 'stun:stun3.l.google.com:19302' },
-      { urls: 'stun:stun4.l.google.com:19302' },
+      // Open Relay free TURN — works for users behind symmetric NAT / corporate
+      {
+        urls: 'turn:openrelay.metered.ca:80',
+        username: 'openrelayproject',
+        credential: 'openrelayproject',
+      },
+      {
+        urls: 'turn:openrelay.metered.ca:443',
+        username: 'openrelayproject',
+        credential: 'openrelayproject',
+      },
+      {
+        urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+        username: 'openrelayproject',
+        credential: 'openrelayproject',
+      },
     ];
 
-    // Add TURN server if configured via env (required for users behind symmetric NAT)
+    // Optional: override with your own TURN via env (paid, more reliable)
     const turnUrl = process.env.NEXT_PUBLIC_TURN_URL;
     if (turnUrl) {
       iceServers.push({
@@ -243,6 +267,8 @@ export default function ConnectPage() {
     const pc = new RTCPeerConnection({
       iceServers,
       iceCandidatePoolSize: 10,
+      bundlePolicy: 'max-bundle',
+      rtcpMuxPolicy: 'require',
     });
 
     pc.onicecandidate = (event) => {
@@ -287,7 +313,20 @@ export default function ConnectPage() {
 
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach((track) => {
-        pc.addTrack(track, localStreamRef.current!);
+        const sender = pc.addTrack(track, localStreamRef.current!);
+        // Cap bandwidth so weak networks don't stutter
+        const params = sender.getParameters();
+        if (!params.encodings) params.encodings = [{}];
+        if (track.kind === 'video') {
+          params.encodings[0].maxBitrate = 800_000;      // 800 kbps video
+          params.encodings[0].maxFramerate = 24;
+          params.degradationPreference = 'maintain-framerate';
+        } else if (track.kind === 'audio') {
+          params.encodings[0].maxBitrate = 64_000;       // 64 kbps audio (clear voice)
+        }
+        sender.setParameters(params).catch((e) => {
+          console.warn('[WebRTC] setParameters failed:', e);
+        });
       });
     }
 
