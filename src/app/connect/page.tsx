@@ -39,7 +39,6 @@ import {
   Camera,
   Sparkles,
   Smile,
-  ImageIcon,
   Maximize,
   Minimize,
   MessageCircle,
@@ -1398,13 +1397,6 @@ export default function ConnectPage() {
                   title="Emoji"
                 >
                   <Smile className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  className="hidden sm:flex h-9 w-9 items-center justify-center rounded-xl border-[2px] border-[#111] bg-white text-[#888] hover:text-[#B794F6] hover:bg-[#FDEBD3] shadow-[2px_2px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[1px] hover:translate-y-[1px] transition-all flex-shrink-0"
-                  title="Attach"
-                >
-                  <ImageIcon className="h-4 w-4" />
                 </button>
                 <input
                   type="text"

@@ -1062,12 +1062,12 @@ function renderMessagesWithDateSeparators(
       <div
         key={m.id}
         id={`msg-${m.id}`}
-        className={`group flex w-full mt-3 ${fromMe ? 'justify-start' : 'justify-end'}`}
+        className={`group flex w-full mt-3 ${fromMe ? 'justify-end' : 'justify-start'}`}
       >
-        <div className={`flex items-start gap-2 sm:gap-3 max-w-[85%] sm:max-w-[75%] ${fromMe ? 'flex-row' : 'flex-row-reverse'}`}>
+        <div className={`flex items-start gap-2 sm:gap-3 max-w-[85%] sm:max-w-[75%] ${fromMe ? 'flex-row-reverse' : 'flex-row'}`}>
           <Avatar handle={m.handle} />
-          <div className={`min-w-0 ${fromMe ? 'text-left' : 'text-right'}`}>
-            <p className={`text-[11px] font-bold mb-0.5 flex items-center gap-1.5 flex-wrap ${fromMe ? 'justify-start' : 'justify-end'}`}>
+          <div className={`min-w-0 ${fromMe ? 'text-right' : 'text-left'}`}>
+            <p className={`text-[11px] font-bold mb-0.5 flex items-center gap-1.5 flex-wrap ${fromMe ? 'justify-end' : 'justify-start'}`}>
               <span className="text-[#111]">{fromMe ? `${m.handle} (you)` : m.handle}</span>
               {isHost && (
                 <span className="rounded-full bg-[#FF6B6B] border border-[#111] px-1.5 py-px text-[8px] font-black uppercase text-white">
@@ -1082,9 +1082,9 @@ function renderMessagesWithDateSeparators(
               <button
                 type="button"
                 onClick={() => handlers.onScrollToParent(m.reply_to_id!)}
-                className={`block w-full mb-1 rounded-lg ${fromMe ? 'border-l-[3px] text-left' : 'border-r-[3px] text-right'} border-[#00D09C] bg-white/70 px-2 py-1 hover:bg-white`}
+                className={`block w-full mb-1 rounded-lg ${fromMe ? 'border-r-[3px] text-right' : 'border-l-[3px] text-left'} border-[#00D09C] bg-white/70 px-2 py-1 hover:bg-white`}
               >
-                <p className={`text-[10px] font-black text-[#00875A] flex items-center gap-1 ${fromMe ? 'justify-start' : 'justify-end'}`}>
+                <p className={`text-[10px] font-black text-[#00875A] flex items-center gap-1 ${fromMe ? 'justify-end' : 'justify-start'}`}>
                   <Reply className="h-2.5 w-2.5" />
                   Replying to {m.reply_to_handle}
                 </p>
@@ -1097,8 +1097,8 @@ function renderMessagesWithDateSeparators(
               <div
                 className={`inline-block max-w-full rounded-2xl border-[2px] border-[#111] px-3 py-2 shadow-[2px_2px_0_#111] ${
                   fromMe
-                    ? 'bg-[#00D09C] text-white rounded-tl-md'
-                    : 'bg-white text-[#111] rounded-tr-md'
+                    ? 'bg-[#00D09C] text-white rounded-tr-md'
+                    : 'bg-white text-[#111] rounded-tl-md'
                 }`}
               >
                 <p className="text-xs sm:text-sm whitespace-pre-wrap break-words leading-snug">
@@ -1111,7 +1111,7 @@ function renderMessagesWithDateSeparators(
               <img
                 src={m.image_url}
                 alt=""
-                className={`mt-1 max-h-60 max-w-[260px] rounded-xl border-[2px] border-[#111] shadow-[2px_2px_0_#111] object-contain bg-white ${fromMe ? '' : 'ml-auto'}`}
+                className={`mt-1 max-h-60 max-w-[260px] rounded-xl border-[2px] border-[#111] shadow-[2px_2px_0_#111] object-contain bg-white ${fromMe ? 'ml-auto' : ''}`}
                 loading="lazy"
               />
             )}
