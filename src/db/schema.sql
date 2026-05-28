@@ -57,7 +57,7 @@ CREATE TABLE public.users (
 
     -- Rate limiting
     matches_used_today   INTEGER NOT NULL DEFAULT 0,
-    max_matches_per_day  INTEGER NOT NULL DEFAULT 20,
+    max_matches_per_day  INTEGER NOT NULL DEFAULT 50,
     matches_reset_date   DATE NOT NULL DEFAULT CURRENT_DATE,
 
     -- Payments

@@ -1,14 +1,37 @@
 // ============================================================
 // GenZ IITian Connect — Socket.IO Server
-// Real-time Matching, Chat & WebRTC Signaling
+// Real-time Matching, Chat & WebRTC Signaling + DB tracking
 // ============================================================
 // Run: node server.js
 // ============================================================
 
+require('dotenv').config({ path: require('path').resolve(__dirname, '.env.local') });
+
 const { createServer } = require('http');
 const { Server } = require('socket.io');
+const { createClient } = require('@supabase/supabase-js');
 
 const PORT = process.env.PORT || 3001;
+
+// ─── Supabase service-role client (server-side only, bypasses RLS) ───
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabase = SUPABASE_URL && SUPABASE_SERVICE_KEY
+  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    })
+  : null;
+
+if (!supabase) {
+  console.warn('[WARN] Supabase env vars missing — session tracking disabled.');
+} else {
+  console.log('[OK] Supabase service client ready — sessions will be tracked.');
+}
+
+// UUID v4 sanity check — only call DB ops when we have a real auth userId
+function isValidUuid(s) {
+  return typeof s === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+}
 const httpServer = createServer();
 
 const io = new Server(httpServer, {
@@ -65,10 +88,37 @@ io.on('connection', (socket) => {
   console.log(`[WS] Total connections: ${io.sockets.sockets.size}`);
 
   // ── Join Queue ──
-  socket.on('queue:join', ({ mode, filters }) => {
+  socket.on('queue:join', async ({ mode, filters }) => {
     // Remove from existing queue if present
     const existingIndex = waitingQueue.findIndex(e => e.socketId === socket.id);
     if (existingIndex !== -1) waitingQueue.splice(existingIndex, 1);
+
+    // Enforce daily limit for authenticated users
+    if (supabase && isValidUuid(oderId)) {
+      const { data: u, error } = await supabase
+        .from('users')
+        .select('matches_used_today, max_matches_per_day, matches_reset_date, is_banned')
+        .eq('id', oderId)
+        .maybeSingle();
+      if (!error && u) {
+        if (u.is_banned) {
+          socket.emit('queue:error', { message: 'Account banned.' });
+          return;
+        }
+        const today = new Date().toISOString().split('T')[0];
+        const usedToday = u.matches_reset_date && u.matches_reset_date.startsWith(today)
+          ? u.matches_used_today : 0;
+        const limit = u.max_matches_per_day ?? 50;
+        if (limit !== -1 && usedToday >= limit) {
+          socket.emit('queue:limit-reached', {
+            message: `Daily limit of ${limit} connects reached. Try again tomorrow.`,
+            usedToday,
+            limit,
+          });
+          return;
+        }
+      }
+    }
 
     const entry = {
       userId: oderId,
@@ -221,7 +271,7 @@ io.on('connection', (socket) => {
 });
 
 // ─── Matching Engine ───
-function tryMatch(entry) {
+async function tryMatch(entry) {
   const matchIndex = waitingQueue.findIndex((other) => {
     if (other.socketId === entry.socketId) return false; // Don't match with self
     if (other.mode !== entry.mode) return false; // Same mode only
@@ -266,6 +316,45 @@ function tryMatch(entry) {
 
   activeSessions.set(sessionId, session);
 
+  // ── DB: persist the session row + bump match counters (best-effort, non-blocking) ──
+  if (supabase) {
+    const u1Auth = isValidUuid(entry.userId);
+    const u2Auth = isValidUuid(match.userId);
+
+    if (u1Auth && u2Auth) {
+      // Both authenticated — insert a real chat_sessions row
+      supabase
+        .from('chat_sessions')
+        .insert({
+          user1_id: entry.userId,
+          user2_id: match.userId,
+          mode: entry.mode,
+          start_time: new Date(session.startedAt).toISOString(),
+          matched_topic: entry.filters?.topic || null,
+          match_type: entry.filters?.topic ? 'topic' : 'random',
+        })
+        .select('session_id')
+        .single()
+        .then(({ data, error }) => {
+          if (error) console.warn('[DB] chat_sessions insert failed:', error.message);
+          else if (data) {
+            session.dbSessionId = data.session_id;
+            console.log('[DB] chat_session saved:', data.session_id);
+          }
+        });
+    }
+
+    // Bump each authenticated user's matches_used_today
+    if (u1Auth) {
+      supabase.rpc('increment_match_count', { p_user_id: entry.userId })
+        .then(({ error }) => error && console.warn('[DB] increment failed (u1):', error.message));
+    }
+    if (u2Auth) {
+      supabase.rpc('increment_match_count', { p_user_id: match.userId })
+        .then(({ error }) => error && console.warn('[DB] increment failed (u2):', error.message));
+    }
+  }
+
   // Notify user1
   const socket1 = io.sockets.sockets.get(entry.socketId);
   const socket2 = io.sockets.sockets.get(match.socketId);
@@ -305,6 +394,22 @@ function endSession(sessionId, endedBySocketId) {
   // Notify the ender too
   const enderSocket = io.sockets.sockets.get(endedBySocketId);
   enderSocket?.emit('chat:ended', { sessionId, endedBy: 'self' });
+
+  // ── DB: close out the chat_sessions row with end_time + duration ──
+  if (supabase && session.dbSessionId) {
+    const duration = Math.round((Date.now() - session.startedAt) / 1000);
+    supabase
+      .from('chat_sessions')
+      .update({
+        end_time: new Date().toISOString(),
+        duration_seconds: duration,
+      })
+      .eq('session_id', session.dbSessionId)
+      .then(({ error }) => {
+        if (error) console.warn('[DB] chat_session end update failed:', error.message);
+        else console.log(`[DB] chat_session ${session.dbSessionId} closed (${duration}s)`);
+      });
+  }
 
   activeSessions.delete(sessionId);
   console.log(`[SESSION] Ended: ${sessionId} | Active sessions: ${activeSessions.size}`);

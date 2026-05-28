@@ -4,8 +4,6 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import {
-  Menu,
-  X,
   User,
   LogOut,
   Shield,
@@ -16,7 +14,6 @@ import {
 
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   return (
@@ -47,7 +44,9 @@ export default function Navbar() {
                   </span>
                   Connect
                 </Link>
-                <NavLink href="/community">Community</NavLink>
+                <NavLink href="/feed">Feed</NavLink>
+                <NavLink href="/spaces">Spaces</NavLink>
+                <NavLink href="/friends">Friends</NavLink>
                 <NavLink href="/plans">Plans</NavLink>
                 {user?.role === 'admin' && (
                   <Link
@@ -73,18 +72,15 @@ export default function Navbar() {
               <div className="relative">
                 <button
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl border-[3px] border-[#111] bg-white shadow-[3px_3px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[2px] hover:translate-y-[2px] transition-all text-sm font-bold"
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl border-[3px] border-[#111] bg-white shadow-[3px_3px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[2px] hover:translate-y-[2px] transition-all text-sm font-bold"
                 >
                   {user?.avatarUrl ? (
                     <img src={user.avatarUrl} alt="" className="h-5 w-5 rounded-full border border-[#111]" referrerPolicy="no-referrer" />
                   ) : (
                     <User className="h-4 w-4" />
                   )}
-                  <span className="hidden sm:block max-w-[120px] truncate">
+                  <span className="hidden sm:block max-w-[140px] truncate">
                     {user?.displayName || user?.email}
-                  </span>
-                  <span className="rounded-full bg-[#00D09C] px-2 py-0.5 text-xs text-white font-bold uppercase">
-                    {user?.planType}
                   </span>
                   <ChevronDown className="h-3.5 w-3.5" />
                 </button>
@@ -142,81 +138,9 @@ export default function Navbar() {
                 Explore
               </Link>
             )}
-
-            {/* Mobile toggle */}
-            <button
-              className="md:hidden rounded-xl border-[3px] border-[#111] p-2 bg-white shadow-[2px_2px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[1px] hover:translate-y-[1px] transition-all"
-              onClick={() => setIsMobileOpen(!isMobileOpen)}
-            >
-              {isMobileOpen ? (
-                <X className="h-5 w-5" />
-              ) : (
-                <Menu className="h-5 w-5" />
-              )}
-            </button>
           </div>
         </div>
       </div>
-
-      {/* ── Mobile Menu ── */}
-      {isMobileOpen && (
-        <div className="md:hidden border-t-[3px] border-[#111] bg-white p-4 space-y-1 animate-slide-down">
-          {isAuthenticated ? (
-            <>
-              <MobileLink
-                href="/dashboard"
-                onClick={() => setIsMobileOpen(false)}
-              >
-                Dashboard
-              </MobileLink>
-              <MobileLink
-                href="/connect/start"
-                onClick={() => setIsMobileOpen(false)}
-              >
-                🟢 Connect Now
-              </MobileLink>
-              <MobileLink
-                href="/community"
-                onClick={() => setIsMobileOpen(false)}
-              >
-                # Community Rooms
-              </MobileLink>
-              <MobileLink
-                href="/plans"
-                onClick={() => setIsMobileOpen(false)}
-              >
-                Plans
-              </MobileLink>
-              {user?.role === 'admin' && (
-                <MobileLink href="/admin" onClick={() => setIsMobileOpen(false)}>
-                  <span className="text-[#FF3B3B] font-bold">🛡 Admin Dashboard</span>
-                </MobileLink>
-              )}
-            </>
-          ) : (
-            <>
-              <MobileLink
-                href="/#features"
-                onClick={() => setIsMobileOpen(false)}
-              >
-                Features
-              </MobileLink>
-              <MobileLink
-                href="/plans"
-                onClick={() => setIsMobileOpen(false)}
-              >
-                Pricing
-              </MobileLink>
-              <MobileLink
-                href="/auth/login"
-                onClick={() => setIsMobileOpen(false)}
-              >
-                Login
-              </MobileLink>
-            </>
-          )}
-        </div>
-      )}
     </nav>
   );
 }
@@ -258,26 +182,6 @@ function DropdownLink({
       onClick={onClick}
     >
       {icon} {children}
-    </Link>
-  );
-}
-
-function MobileLink({
-  href,
-  onClick,
-  children,
-}: {
-  href: string;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      onClick={onClick}
-      className="block rounded-lg px-4 py-3 text-sm font-semibold hover:bg-[#FDEBD3] transition-colors"
-    >
-      {children}
     </Link>
   );
 }

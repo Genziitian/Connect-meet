@@ -11,7 +11,8 @@ import { supabase } from '@/lib/supabase';
 import EmojiPicker from '@/components/EmojiPicker';
 import {
   ArrowLeft, Send, Flag, Smile, ImageIcon, Loader2, Users, LogOut, Trash2,
-  Pin, PinOff, UserX, Power, X as XIcon, Reply, Edit3, Check,
+  Pin, PinOff, UserX, Power, X as XIcon, Reply, Edit3, Check, UserPlus,
+  AlertCircle,
 } from 'lucide-react';
 
 const MAX_IMAGE_BYTES = 200 * 1024; // 200 KB
@@ -86,6 +87,16 @@ export default function RoomDetailPage() {
   const [joinRequest, setJoinRequest] = useState<JoinRequest | null>(null);
   const [joinNote, setJoinNote] = useState('');
   const [submittingRequest, setSubmittingRequest] = useState(false);
+
+  // Friendship status per peer user_id — 'none' | 'sent' | 'incoming' | 'friend'
+  const [friendStatus, setFriendStatus] = useState<Record<string, 'none' | 'sent' | 'incoming' | 'friend'>>({});
+  const [allowFriendRequests, setAllowFriendRequests] = useState<Record<string, boolean>>({});
+
+  // Add Friend modal state
+  const [addFriendTarget, setAddFriendTarget] = useState<{ userId: string; handle: string } | null>(null);
+  const [addFriendIntro, setAddFriendIntro] = useState('');
+  const [addFriendSending, setAddFriendSending] = useState(false);
+  const [addFriendError, setAddFriendError] = useState('');
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -293,6 +304,84 @@ export default function RoomDetailPage() {
       setRenaming(false);
     }
     setRenameBusy(false);
+  };
+
+  // Compute friend status for every distinct peer in the room
+  const loadFriendStatusFor = useCallback(async (peerIds: string[]) => {
+    if (!user || peerIds.length === 0) return;
+    const uniq = Array.from(new Set(peerIds)).filter((id) => id !== user.id);
+    if (uniq.length === 0) return;
+    const { data } = await supabase
+      .from('friendships')
+      .select('requester_id, recipient_id, status')
+      .or(`and(requester_id.eq.${user.id},recipient_id.in.(${uniq.join(',')})),and(recipient_id.eq.${user.id},requester_id.in.(${uniq.join(',')}))`);
+    const map: Record<string, 'none' | 'sent' | 'incoming' | 'friend'> = {};
+    uniq.forEach((id) => { map[id] = 'none'; });
+    (data || []).forEach((row: { requester_id: string; recipient_id: string; status: string }) => {
+      const peer = row.requester_id === user.id ? row.recipient_id : row.requester_id;
+      if (row.status === 'accepted') map[peer] = 'friend';
+      else if (row.status === 'pending') {
+        map[peer] = row.requester_id === user.id ? 'sent' : 'incoming';
+      }
+    });
+    setFriendStatus((prev) => ({ ...prev, ...map }));
+
+    // Also fetch allow_friend_requests for each
+    const { data: prefs } = await supabase
+      .from('users')
+      .select('id, allow_friend_requests')
+      .in('id', uniq);
+    const prefMap: Record<string, boolean> = {};
+    (prefs || []).forEach((u: { id: string; allow_friend_requests: boolean }) => {
+      prefMap[u.id] = u.allow_friend_requests;
+    });
+    setAllowFriendRequests((prev) => ({ ...prev, ...prefMap }));
+  }, [user]);
+
+  // Refresh friend statuses whenever new distinct peers appear in messages
+  useEffect(() => {
+    if (!user) return;
+    const peerIds = Array.from(new Set(messages.map((m) => m.user_id)));
+    loadFriendStatusFor(peerIds);
+  }, [user, messages, loadFriendStatusFor]);
+
+  const handleAddFriend = (peerUserId: string, peerHandle: string) => {
+    if (!user || !room) return;
+    if (friendStatus[peerUserId] !== 'none') return;
+    // Open in-app modal instead of window.prompt
+    setAddFriendTarget({ userId: peerUserId, handle: peerHandle });
+    setAddFriendIntro('');
+    setAddFriendError('');
+  };
+
+  const submitAddFriend = async () => {
+    if (!user || !room || !addFriendTarget || addFriendSending) return;
+    const { userId: peerUserId } = addFriendTarget;
+    setAddFriendSending(true);
+    setAddFriendError('');
+
+    // Optimistic flip
+    setFriendStatus((p) => ({ ...p, [peerUserId]: 'sent' }));
+
+    const { error: err } = await supabase.from('friendships').insert({
+      requester_id: user.id,
+      recipient_id: peerUserId,
+      intro_message: addFriendIntro.trim() || null,
+      met_context: { kind: 'room', id: room.id, name: room.name, slug: room.slug },
+    });
+
+    setAddFriendSending(false);
+
+    if (err) {
+      setFriendStatus((p) => ({ ...p, [peerUserId]: 'none' }));
+      if (err.code === '23505') setAddFriendError('You already have a request with this user.');
+      else if (err.message.includes('row-level security')) setAddFriendError("Couldn't send — they may have friend requests disabled, or you've hit the daily limit.");
+      else setAddFriendError(err.message);
+      return;
+    }
+    // Success — close modal
+    setAddFriendTarget(null);
+    setAddFriendIntro('');
   };
 
   const handleRequestAccess = async () => {
@@ -768,6 +857,9 @@ export default function RoomDetailPage() {
               onDelete: handleAdminDeleteMessage,
               onBan: handleAdminBanUser,
               onScrollToParent: scrollToMessage,
+              onAddFriend: handleAddFriend,
+              friendStatus,
+              allowFriendRequests,
             })
           )}
         </div>
@@ -940,6 +1032,120 @@ export default function RoomDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Add Friend modal */}
+      {addFriendTarget && (
+        <AddFriendModal
+          target={addFriendTarget}
+          intro={addFriendIntro}
+          onIntroChange={setAddFriendIntro}
+          onClose={() => {
+            if (!addFriendSending) {
+              setAddFriendTarget(null);
+              setAddFriendError('');
+            }
+          }}
+          onSubmit={submitAddFriend}
+          sending={addFriendSending}
+          error={addFriendError}
+        />
+      )}
+    </div>
+  );
+}
+
+function AddFriendModal({
+  target, intro, onIntroChange, onClose, onSubmit, sending, error,
+}: {
+  target: { userId: string; handle: string };
+  intro: string;
+  onIntroChange: (v: string) => void;
+  onClose: () => void;
+  onSubmit: () => void;
+  sending: boolean;
+  error: string;
+}) {
+  // Esc to close
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !sending) onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose, sending]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bb-card bg-white w-full max-w-sm p-5 sm:p-6 animate-in"
+      >
+        <div className="flex items-start gap-3 mb-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#B794F6] border-[2px] border-[#111] shadow-[2px_2px_0_#111] flex-shrink-0">
+            <UserPlus className="h-5 w-5 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-base font-black text-[#111]">Send friend request</h2>
+            <p className="text-xs text-[#555]">
+              to <span className="font-bold text-[#111]">{target.handle}</span>
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={sending}
+            className="flex h-7 w-7 items-center justify-center rounded-lg border-[2px] border-[#111] bg-white shadow-[2px_2px_0_#111] text-[#555] disabled:opacity-50"
+          >
+            <XIcon className="h-3.5 w-3.5" />
+          </button>
+        </div>
+
+        <label className="block text-[10px] font-black text-[#111] mb-1 uppercase tracking-wider">
+          Intro message <span className="text-[#888] font-medium normal-case">(optional)</span>
+        </label>
+        <textarea
+          value={intro}
+          onChange={(e) => onIntroChange(e.target.value)}
+          placeholder="Hey! We vibed in the lounge…"
+          rows={3}
+          maxLength={300}
+          autoFocus
+          className="w-full rounded-xl border-[2px] border-[#111] px-3 py-2 text-sm shadow-[2px_2px_0_#111] focus:outline-none focus:bg-[#FDEBD3] resize-none mb-1"
+        />
+        <p className="text-[10px] text-[#888] mb-3 text-right">
+          {intro.length}/300
+        </p>
+
+        {error && (
+          <div className="flex items-start gap-2 rounded-lg border-[2px] border-[#FF3B3B]/30 bg-[#FF3B3B]/10 px-3 py-2 mb-3 text-xs text-[#FF3B3B] font-medium">
+            <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        <div className="flex flex-col-reverse sm:flex-row gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={sending}
+            className="flex-1 rounded-xl border-[2px] border-[#111] bg-white py-2.5 text-sm font-black text-[#111] shadow-[3px_3px_0_#111] hover:shadow-[1px_1px_0_#111] active:translate-x-[1px] active:translate-y-[1px] disabled:opacity-50 transition-all"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onSubmit}
+            disabled={sending}
+            className="flex-1 flex items-center justify-center gap-2 rounded-xl border-[2px] border-[#111] bg-[#00D09C] py-2.5 text-sm font-black text-white shadow-[3px_3px_0_#111] hover:shadow-[1px_1px_0_#111] active:translate-x-[1px] active:translate-y-[1px] disabled:opacity-50 transition-all"
+          >
+            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
+            Send request
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1026,6 +1232,9 @@ interface MessageHandlers {
   onDelete: (m: RoomMessage) => void;
   onBan: (userId: string, handle: string) => void;
   onScrollToParent: (id: string) => void;
+  onAddFriend: (userId: string, handle: string) => void;
+  friendStatus: Record<string, 'none' | 'sent' | 'incoming' | 'friend'>;
+  allowFriendRequests: Record<string, boolean>;
 }
 
 function renderMessagesWithDateSeparators(
@@ -1127,6 +1336,40 @@ function renderMessagesWithDateSeparators(
             >
               <Reply className="h-3 w-3" />
             </button>
+            {/* Add Friend — only for non-self, non-deleted, and if they allow it */}
+            {!fromMe && (handlers.allowFriendRequests[m.user_id] ?? true) && (() => {
+              const status = handlers.friendStatus[m.user_id] || 'none';
+              if (status === 'friend') {
+                return (
+                  <span title="Already friends" className="flex h-6 w-6 items-center justify-center rounded-md bg-[#00D09C] text-white border border-[#111]">
+                    <UserPlus className="h-3 w-3" />
+                  </span>
+                );
+              }
+              if (status === 'sent') {
+                return (
+                  <span title="Request sent" className="flex h-6 w-6 items-center justify-center rounded-md bg-[#888]/40 text-[#555] border border-[#111]">
+                    <UserPlus className="h-3 w-3" />
+                  </span>
+                );
+              }
+              if (status === 'incoming') {
+                return (
+                  <span title="They sent you a request — accept in /friends" className="flex h-6 w-6 items-center justify-center rounded-md bg-[#FBBF24] border border-[#111]">
+                    <UserPlus className="h-3 w-3" />
+                  </span>
+                );
+              }
+              return (
+                <button
+                  onClick={() => handlers.onAddFriend(m.user_id, m.handle)}
+                  title="Send friend request"
+                  className="flex h-6 w-6 items-center justify-center rounded-md bg-[#B794F6]/40 hover:bg-[#B794F6] hover:text-white border border-[#111]"
+                >
+                  <UserPlus className="h-3 w-3" />
+                </button>
+              );
+            })()}
             {!fromMe && (
               <button
                 onClick={() => handlers.onFlag(m)}

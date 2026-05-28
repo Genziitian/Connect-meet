@@ -112,7 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ageVerified: false,
         consentGiven: false,
         matchesUsedToday: 0,
-        maxMatchesPerDay: 20,
+        maxMatchesPerDay: 50,
         createdAt: new Date().toISOString(),
         lastActiveAt: new Date().toISOString(),
       });

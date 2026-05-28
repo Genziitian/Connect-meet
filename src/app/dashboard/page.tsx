@@ -3,12 +3,36 @@
 // ============================================================
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
+import { supabase } from '@/lib/supabase';
 import { formatMatchCount, formatINR } from '@/lib/utils';
 import { PLANS } from '@/lib/constants';
+
+interface UserStats {
+  total_connects: number;
+  total_seconds: number;
+  week_connects: number;
+  week_seconds: number;
+  today_connects: number;
+  today_seconds: number;
+  matches_used_today: number;
+  max_matches_per_day: number;
+  streak_days: number;
+  safety_score: number;
+  reports_received: number;
+}
+
+function formatDuration(seconds: number): string {
+  if (!seconds || seconds < 60) return `${seconds || 0}s`;
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
+}
 import {
   Zap,
   MessageSquare,
@@ -30,6 +54,7 @@ import {
 export default function DashboardPage() {
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
+  const [stats, setStats] = useState<UserStats | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -38,6 +63,37 @@ export default function DashboardPage() {
       router.push('/auth/complete-profile');
     }
   }, [isAuthenticated, user, router]);
+
+  // Fetch live stats from v_user_stats. Auto-refreshes every 30s and
+  // also pushes an update whenever a chat_session row for me changes.
+  const fetchStats = useCallback(async () => {
+    if (!user?.id) return;
+    const { data } = await supabase
+      .from('v_user_stats')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle<UserStats>();
+    if (data) setStats(data);
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    fetchStats();
+    const interval = setInterval(fetchStats, 30_000);
+    // Realtime: any session row I'm in changes → refresh
+    const channel = supabase
+      .channel(`user-stats-${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'chat_sessions' },
+        () => fetchStats()
+      )
+      .subscribe();
+    return () => {
+      clearInterval(interval);
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, fetchStats]);
 
   if (!isAuthenticated || !user) return null;
 
@@ -81,12 +137,48 @@ export default function DashboardPage() {
           </Link>
         </div>
 
-        {/* Stats Cards */}
+        {/* Stats Cards — live from v_user_stats, refreshes on chat_sessions changes + every 30s */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <StatCard icon={MessageSquare} label="Total Connects" value={user.matchesUsedToday.toString()} subtitle="Today" color="green" />
-          <StatCard icon={Clock} label="Time Connected" value="0h 0m" subtitle="Today" color="purple" />
-          <StatCard icon={TrendingUp} label="Connect Streak" value="0 days" subtitle="Keep going!" color="orange" />
-          <StatCard icon={Shield} label="Safety Score" value="100%" subtitle="Excellent" color="green" />
+          <StatCard
+            icon={MessageSquare}
+            label="Total Connects"
+            value={(stats?.total_connects ?? 0).toLocaleString()}
+            subtitle={
+              stats
+                ? `${stats.today_connects} today · ${stats.week_connects} this week`
+                : 'Loading…'
+            }
+            color="green"
+          />
+          <StatCard
+            icon={Clock}
+            label="Time Connected"
+            value={formatDuration(stats?.total_seconds ?? 0)}
+            subtitle={stats ? `${formatDuration(stats.week_seconds)} this week` : 'Loading…'}
+            color="purple"
+          />
+          <StatCard
+            icon={TrendingUp}
+            label="Connect Streak"
+            value={`${stats?.streak_days ?? 0} ${(stats?.streak_days ?? 0) === 1 ? 'day' : 'days'}`}
+            subtitle={
+              (stats?.streak_days ?? 0) > 0
+                ? 'Keep it going! 🔥'
+                : 'Start a chat to begin'
+            }
+            color="orange"
+          />
+          <StatCard
+            icon={Shield}
+            label="Safety Score"
+            value={`${stats?.safety_score ?? 100}%`}
+            subtitle={
+              (stats?.reports_received ?? 0) === 0
+                ? 'Excellent'
+                : `${stats?.reports_received} report${stats?.reports_received === 1 ? '' : 's'}`
+            }
+            color={(stats?.safety_score ?? 100) >= 80 ? 'green' : 'orange'}
+          />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -209,22 +301,32 @@ export default function DashboardPage() {
                 Today&apos;s Usage
               </h2>
               <div className="space-y-4">
-                <div>
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-[#555]">Connects Used</span>
-                    <span className="font-bold text-[#111]">
-                      {formatMatchCount(user.matchesUsedToday, user.maxMatchesPerDay)}
-                    </span>
-                  </div>
-                  <div className="h-3 rounded-full bg-[#FDEBD3] border-[2px] border-[#111] overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-[#00D09C] transition-all"
-                      style={{
-                        width: user.maxMatchesPerDay === -1 ? '5%' : `${(user.matchesUsedToday / user.maxMatchesPerDay) * 100}%`,
-                      }}
-                    />
-                  </div>
-                </div>
+                {(() => {
+                  const used = stats?.matches_used_today ?? user.matchesUsedToday;
+                  const limit = stats?.max_matches_per_day ?? user.maxMatchesPerDay;
+                  const pct = limit === -1 ? 5 : Math.min(100, (used / limit) * 100);
+                  return (
+                    <div>
+                      <div className="flex justify-between text-sm mb-2">
+                        <span className="text-[#555]">Connects Used</span>
+                        <span className="font-bold text-[#111]">
+                          {formatMatchCount(used, limit)}
+                        </span>
+                      </div>
+                      <div className="h-3 rounded-full bg-[#FDEBD3] border-[2px] border-[#111] overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${pct >= 90 ? 'bg-[#FF3B3B]' : pct >= 70 ? 'bg-[#FB923C]' : 'bg-[#00D09C]'}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      {stats?.today_seconds !== undefined && stats.today_seconds > 0 && (
+                        <p className="text-[10px] text-[#888] mt-1.5">
+                          Talked {formatDuration(stats.today_seconds)} today
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 

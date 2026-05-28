@@ -17,11 +17,14 @@ export default function AppShell({ children }: { children: ReactNode }) {
   // Pages where the mobile tab bar is hidden — main shouldn't reserve bottom padding for it
   const inActiveRoom =
     pathname.startsWith('/community/') && pathname.split('/').length > 2;
+  const inDMThread =
+    pathname.startsWith('/friends/') && pathname.split('/').length > 2;
   const hideTabBar =
     pathname === '/connect' ||
     pathname.startsWith('/auth') ||
     pathname.startsWith('/admin') ||
-    inActiveRoom;
+    inActiveRoom ||
+    inDMThread;
   // Hide the footer on immersive chat surfaces so the mobile keyboard can't scroll it into view
   const hideFooter = pathname === '/connect' || inActiveRoom;
 
