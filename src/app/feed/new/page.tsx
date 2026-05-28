@@ -3,7 +3,7 @@
 // ============================================================
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
@@ -27,6 +27,14 @@ interface RoomOption {
 }
 
 export default function CreatePostPage() {
+  return (
+    <Suspense fallback={null}>
+      <CreatePostInner />
+    </Suspense>
+  );
+}
+
+function CreatePostInner() {
   const router = useRouter();
   const search = useSearchParams();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();

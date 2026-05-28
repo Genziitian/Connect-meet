@@ -3,7 +3,7 @@
 // ============================================================
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { Suspense, useEffect, useState, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
@@ -45,6 +45,14 @@ interface Community {
 type Tab = 'rooms' | 'communities';
 
 export default function SpacesPage() {
+  return (
+    <Suspense fallback={null}>
+      <SpacesInner />
+    </Suspense>
+  );
+}
+
+function SpacesInner() {
   const router = useRouter();
   const search = useSearchParams();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
