@@ -374,9 +374,13 @@ export default function RoomDetailPage() {
 
     if (err) {
       setFriendStatus((p) => ({ ...p, [peerUserId]: 'none' }));
-      if (err.code === '23505') setAddFriendError('You already have a request with this user.');
-      else if (err.message.includes('row-level security')) setAddFriendError("Couldn't send — they may have friend requests disabled, or you've hit the daily limit.");
-      else setAddFriendError(err.message);
+      if (err.code === '23505') {
+        setAddFriendError('You already have a request with this user.');
+      } else if (err.message.includes('row-level security')) {
+        setAddFriendError(await diagnoseFriendRequestRejection(user.id, peerUserId));
+      } else {
+        setAddFriendError(err.message);
+      }
       return;
     }
     // Success — close modal
@@ -1197,6 +1201,50 @@ function Avatar({ handle }: { handle: string }) {
       <span className="text-[11px] sm:text-sm font-black text-white">{initial}</span>
     </div>
   );
+}
+
+// Probes the DB to figure out which friendships_insert RLS sub-rule rejected.
+// Mirrors migration 013_friends.sql lines 75-99.
+async function diagnoseFriendRequestRejection(myId: string, peerId: string): Promise<string> {
+  const sevenDaysAgoIso = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const [{ count: pendingCount }, { data: declined }, { data: canReceive }] = await Promise.all([
+    supabase
+      .from('friendships')
+      .select('id', { count: 'exact', head: true })
+      .eq('requester_id', myId)
+      .eq('status', 'pending'),
+    supabase
+      .from('friendships')
+      .select('responded_at')
+      .eq('requester_id', myId)
+      .eq('recipient_id', peerId)
+      .eq('status', 'declined')
+      .gt('responded_at', sevenDaysAgoIso)
+      .order('responded_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase.rpc('can_receive_friend_request', { p_user_id: peerId }),
+  ]);
+
+  // 1) 7-day decline cooldown
+  if (declined?.responded_at) {
+    const unlockMs = new Date(declined.responded_at).getTime() + 7 * 86400000;
+    const daysLeft = Math.max(1, Math.ceil((unlockMs - Date.now()) / 86400000));
+    return `They declined a recent request — you can try again in ${daysLeft} day${daysLeft === 1 ? '' : 's'}.`;
+  }
+
+  // 2) Recipient turned requests off
+  if (canReceive === false) {
+    return "They've turned off friend requests in their settings.";
+  }
+
+  // 3) Pending-request cap (10)
+  if ((pendingCount ?? 0) >= 10) {
+    return `You already have ${pendingCount} unanswered requests out. Cancel or wait for replies before sending another.`;
+  }
+
+  // 4) Fallback — couldn't pin it down
+  return "Couldn't send. Try again in a moment.";
 }
 
 function hashStr(s: string): number {
