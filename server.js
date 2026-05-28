@@ -19,6 +19,9 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = SUPABASE_URL && SUPABASE_SERVICE_KEY
   ? createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
       auth: { autoRefreshToken: false, persistSession: false },
+      // Node <22 has no native WebSocket; supply `ws` so Realtime init doesn't throw
+      // (we don't actually use Realtime subscriptions on the server)
+      realtime: { transport: require('ws') },
     })
   : null;
 

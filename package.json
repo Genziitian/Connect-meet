@@ -24,7 +24,8 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "socket.io": "^4.8.3",
-    "socket.io-client": "^4.8.3"
+    "socket.io-client": "^4.8.3",
+    "ws": "^8.21.0"
   },
   "devDependencies": {
     "@realfavicongenerator/generate-favicon": "^0.8.3",
